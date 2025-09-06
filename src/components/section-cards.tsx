@@ -1,4 +1,7 @@
-import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react"
+'use client'
+
+import { useState, useEffect } from "react"
+import { Key, Users, Monitor, Package } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import {
@@ -9,92 +12,128 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { getKeygenApi } from "@/lib/api"
 
 export function SectionCards() {
+  const [stats, setStats] = useState({
+    licenses: 0,
+    users: 0, 
+    machines: 0,
+    products: 0,
+    loading: true
+  })
+
+  const api = getKeygenApi()
+
+  useEffect(() => {
+    loadDashboardStats()
+  }, [])
+
+  const loadDashboardStats = async () => {
+    try {
+      const [licensesResponse, usersResponse, machinesResponse, productsResponse] = await Promise.all([
+        api.licenses.list({ limit: 1 }).catch(() => ({ data: [], meta: { count: 0 } })),
+        api.users.list({ limit: 1 }).catch(() => ({ data: [], meta: { count: 0 } })),
+        api.machines.list({ limit: 1 }).catch(() => ({ data: [], meta: { count: 0 } })),
+        api.products.list({ limit: 1 }).catch(() => ({ data: [], meta: { count: 0 } })),
+      ])
+
+      setStats({
+        licenses: (typeof licensesResponse.meta?.count === 'number' ? licensesResponse.meta.count : 0) || (Array.isArray(licensesResponse.data) ? licensesResponse.data.length : 0),
+        users: (typeof usersResponse.meta?.count === 'number' ? usersResponse.meta.count : 0) || (Array.isArray(usersResponse.data) ? usersResponse.data.length : 0),
+        machines: (typeof machinesResponse.meta?.count === 'number' ? machinesResponse.meta.count : 0) || (Array.isArray(machinesResponse.data) ? machinesResponse.data.length : 0),
+        products: (typeof productsResponse.meta?.count === 'number' ? productsResponse.meta.count : 0) || (Array.isArray(productsResponse.data) ? productsResponse.data.length : 0),
+        loading: false
+      })
+    } catch (error) {
+      console.error('Failed to load dashboard stats:', error)
+      setStats(prev => ({ ...prev, loading: false }))
+    }
+  }
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Total Revenue</CardDescription>
+          <CardDescription>Active Licenses</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            $1,250.00
+            {stats.loading ? '...' : stats.licenses.toLocaleString()}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <IconTrendingUp />
-              +12.5%
+              <Key className="size-4" />
+              Licenses
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Trending up this month <IconTrendingUp className="size-4" />
+            Total license count <Key className="size-4" />
           </div>
           <div className="text-muted-foreground">
-            Visitors for the last 6 months
+            Manage licenses from the licenses page
           </div>
         </CardFooter>
       </Card>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>New Customers</CardDescription>
+          <CardDescription>Registered Users</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            1,234
+            {stats.loading ? '...' : stats.users.toLocaleString()}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <IconTrendingDown />
-              -20%
+              <Users className="size-4" />
+              Users
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Down 20% this period <IconTrendingDown className="size-4" />
+            Total user accounts <Users className="size-4" />
           </div>
           <div className="text-muted-foreground">
-            Acquisition needs attention
+            User management and permissions
           </div>
         </CardFooter>
       </Card>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Active Accounts</CardDescription>
+          <CardDescription>Active Machines</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            45,678
+            {stats.loading ? '...' : stats.machines.toLocaleString()}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <IconTrendingUp />
-              +12.5%
+              <Monitor className="size-4" />
+              Machines
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Strong user retention <IconTrendingUp className="size-4" />
+            Licensed machines <Monitor className="size-4" />
           </div>
-          <div className="text-muted-foreground">Engagement exceed targets</div>
+          <div className="text-muted-foreground">Monitor device activations</div>
         </CardFooter>
       </Card>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Growth Rate</CardDescription>
+          <CardDescription>Products</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            4.5%
+            {stats.loading ? '...' : stats.products.toLocaleString()}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <IconTrendingUp />
-              +4.5%
+              <Package className="size-4" />
+              Products
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Steady performance increase <IconTrendingUp className="size-4" />
+            Managed products <Package className="size-4" />
           </div>
-          <div className="text-muted-foreground">Meets growth projections</div>
+          <div className="text-muted-foreground">Software product catalog</div>
         </CardFooter>
       </Card>
     </div>
