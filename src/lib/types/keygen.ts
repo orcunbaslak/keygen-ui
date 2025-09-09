@@ -241,6 +241,19 @@ export interface RequestLog extends KeygenResource {
   };
 }
 
+// Webhook
+export interface Webhook extends KeygenResource {
+  type: 'webhooks';
+  attributes: {
+    endpoint: string;
+    events: string[];
+    signingKey?: string;
+    enabled: boolean;
+    created: string;
+    updated: string;
+  };
+}
+
 // API Request options
 export interface ApiRequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
@@ -313,4 +326,10 @@ export interface RequestLogFilters extends PaginationOptions {
   ip?: string;
   method?: string;
   status?: string;
+}
+
+export interface WebhookFilters extends PaginationOptions {
+  enabled?: boolean;
+  endpoint?: string;
+  events?: string[];
 }

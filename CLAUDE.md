@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Keygen-UI is a comprehensive frontend interface for Keygen API licensing management. Built with Next.js 15, React 19, TypeScript, and Tailwind CSS v4, it provides complete CRUD operations for licenses, machines, products, policies, and users.
 
-**Status**: 98% Complete - Production Ready ✅
+**Status**: Phase 1 Complete - Enhanced Production Ready ✅
 **API Integration**: Connected to Keygen instance at `https://lms.pvx.ai/v1`
 **Authentication**: Fully implemented with protected routes
 
@@ -173,6 +173,9 @@ KEYGEN_ADMIN_PASSWORD=[configured]
 - **Machine Management** (`/dashboard/machines`) - Monitor and manage devices
 - **Product Management** (`/dashboard/products`) - Product lifecycle management
 - **Policy Management** (`/dashboard/policies`) - Complete policy management with smart API-compliant creation
+- **Group Management** (`/dashboard/groups`) - **NEW** Complete group CRUD, user/license assignment
+- **Entitlement Management** (`/dashboard/entitlements`) - **NEW** Feature toggle management and license association
+- **Webhook Management** (`/dashboard/webhooks`) - **NEW** Real-time event notification configuration
 - **User Management** (`/dashboard/users`) - User administration with roles
 
 ### Available API Resources
@@ -180,16 +183,21 @@ KEYGEN_ADMIN_PASSWORD=[configured]
 - `api.machines` - Machine monitoring operations  
 - `api.products` - Product management operations
 - `api.policies` - Policy management operations
+- `api.groups` - **NEW** Group management operations
+- `api.entitlements` - **NEW** Entitlement management operations
+- `api.webhooks` - **NEW** Webhook management and event notifications
+- `api.requestLogs` - **NEW** Request log analytics operations
 - `api.users` - User administration operations
 
 ## Important Notes
 
-- **Production Ready**: 98% complete, fully functional for license management
+- **Production Ready**: Phase 1 complete, fully functional enterprise-grade licensing platform
 - **Real API Integration**: Connected to live Keygen instance
 - **Type Safety**: Complete TypeScript coverage with strict mode
 - **Performance**: Optimized with Turbopack bundling
 - **Responsive Design**: Mobile-first approach with Tailwind CSS v4
 - **Error Handling**: Comprehensive error management throughout
+- **Enhanced Features**: Now includes Groups, Entitlements, Webhooks, and Request Logs support
 
 ## 🤖 Agentic Development Patterns & Troubleshooting
 

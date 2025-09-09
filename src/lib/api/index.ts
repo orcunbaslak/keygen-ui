@@ -4,13 +4,14 @@ import { MachineResource } from './resources/machines';
 import { UserResource } from './resources/users';
 import { PolicyResource } from './resources/policies';
 import { ProductResource } from './resources/products';
+import { GroupResource } from './resources/groups';
+import { EntitlementResource } from './resources/entitlements';
+import { RequestLogResource } from './resources/request-logs';
+import { WebhookResource } from './resources/webhooks';
 
 // Additional resource imports (to be created)
-// import { GroupResource } from './resources/groups';
-// import { EntitlementResource } from './resources/entitlements';
 // import { ProcessResource } from './resources/processes';
 // import { ComponentResource } from './resources/components';
-// import { RequestLogResource } from './resources/request-logs';
 
 export class KeygenApi {
   public licenses: LicenseResource;
@@ -18,13 +19,14 @@ export class KeygenApi {
   public users: UserResource;
   public policies: PolicyResource;
   public products: ProductResource;
+  public groups: GroupResource;
+  public entitlements: EntitlementResource;
+  public requestLogs: RequestLogResource;
+  public webhooks: WebhookResource;
   
   // Additional resources (to be uncommented when created)
-  // public groups: GroupResource;
-  // public entitlements: EntitlementResource;
   // public processes: ProcessResource;
   // public components: ComponentResource;
-  // public requestLogs: RequestLogResource;
 
   constructor(private client: KeygenClient) {
     this.licenses = new LicenseResource(client);
@@ -32,13 +34,14 @@ export class KeygenApi {
     this.users = new UserResource(client);
     this.policies = new PolicyResource(client);
     this.products = new ProductResource(client);
+    this.groups = new GroupResource(client);
+    this.entitlements = new EntitlementResource(client);
+    this.requestLogs = new RequestLogResource(client);
+    this.webhooks = new WebhookResource(client);
     
     // Initialize additional resources
-    // this.groups = new GroupResource(client);
-    // this.entitlements = new EntitlementResource(client);
     // this.processes = new ProcessResource(client);
     // this.components = new ComponentResource(client);
-    // this.requestLogs = new RequestLogResource(client);
   }
 
   /**
@@ -108,3 +111,7 @@ export { MachineResource } from './resources/machines';
 export { UserResource } from './resources/users';
 export { PolicyResource } from './resources/policies';
 export { ProductResource } from './resources/products';
+export { GroupResource } from './resources/groups';
+export { EntitlementResource } from './resources/entitlements';
+export { RequestLogResource } from './resources/request-logs';
+export { WebhookResource } from './resources/webhooks';

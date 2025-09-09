@@ -11,6 +11,9 @@ import {
   IconSettings,
   IconHelp,
   IconReportAnalytics,
+  IconUsersGroup,
+  IconShieldCheck,
+  IconWebhook,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -52,6 +55,21 @@ const data = {
       title: "Policies",
       url: "/policies",
       icon: IconShield,
+    },
+    {
+      title: "Groups",
+      url: "/groups",
+      icon: IconUsersGroup,
+    },
+    {
+      title: "Entitlements",
+      url: "/entitlements",
+      icon: IconShieldCheck,
+    },
+    {
+      title: "Webhooks",
+      url: "/webhooks",
+      icon: IconWebhook,
     },
     {
       title: "Users",
