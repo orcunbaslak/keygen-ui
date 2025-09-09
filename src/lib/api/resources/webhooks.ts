@@ -56,41 +56,41 @@ export class WebhookResource {
     
     // Add filter parameters
     if (filters.enabled !== undefined) params.enabled = filters.enabled;
-    if (filters.endpoint) params.endpoint = filters.endpoint;
+    if (filters.url) params.url = filters.url;
     if (filters.events && filters.events.length > 0) {
       params.events = filters.events.join(',');
     }
 
-    return this.client.request<Webhook[]>('webhooks', { params });
+    return this.client.request<Webhook[]>('webhook-endpoints', { params });
   }
 
   /**
    * Get a specific webhook by ID
    */
   async get(id: string): Promise<KeygenResponse<Webhook>> {
-    return this.client.request<Webhook>(`webhooks/${id}`);
+    return this.client.request<Webhook>(`webhook-endpoints/${id}`);
   }
 
   /**
    * Create a new webhook
    */
   async create(webhookData: {
-    endpoint: string;
+    url: string;
     events: string[];
     enabled?: boolean;
   }): Promise<KeygenResponse<Webhook>> {
     const body = {
       data: {
-        type: 'webhooks',
+        type: 'webhook-endpoints',
         attributes: {
-          endpoint: webhookData.endpoint.trim(),
+          url: webhookData.url.trim(),
           events: webhookData.events,
           enabled: webhookData.enabled !== false, // Default to true
         },
       },
     };
 
-    return this.client.request<Webhook>('webhooks', {
+    return this.client.request<Webhook>('webhook-endpoints', {
       method: 'POST',
       body,
     });
@@ -100,23 +100,23 @@ export class WebhookResource {
    * Update a webhook
    */
   async update(id: string, updates: {
-    endpoint?: string;
+    url?: string;
     events?: string[];
     enabled?: boolean;
   }): Promise<KeygenResponse<Webhook>> {
     const body = {
       data: {
-        type: 'webhooks',
+        type: 'webhook-endpoints',
         id,
         attributes: {
-          ...(updates.endpoint && { endpoint: updates.endpoint.trim() }),
+          ...(updates.url && { url: updates.url.trim() }),
           ...(updates.events && { events: updates.events }),
           ...(updates.enabled !== undefined && { enabled: updates.enabled }),
         },
       },
     };
 
-    return this.client.request<Webhook>(`webhooks/${id}`, {
+    return this.client.request<Webhook>(`webhook-endpoints/${id}`, {
       method: 'PATCH',
       body,
     });
@@ -126,7 +126,7 @@ export class WebhookResource {
    * Delete a webhook
    */
   async delete(id: string): Promise<void> {
-    await this.client.request(`webhooks/${id}`, {
+    await this.client.request(`webhook-endpoints/${id}`, {
       method: 'DELETE',
     });
   }
@@ -158,7 +158,7 @@ export class WebhookResource {
       },
     };
 
-    return this.client.request(`webhooks/${id}/actions/test`, {
+    return this.client.request(`webhook-endpoints/${id}/actions/test`, {
       method: 'POST',
       body,
     });
@@ -175,7 +175,7 @@ export class WebhookResource {
     if (options.limit) params.limit = options.limit;
     if (options.page) params.page = options.page;
 
-    return this.client.request(`webhooks/${id}/webhook-events`, { params });
+    return this.client.request(`webhook-endpoints/${id}/webhook-events`, { params });
   }
 
   /**

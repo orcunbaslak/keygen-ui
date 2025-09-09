@@ -27,7 +27,7 @@ export function CreateWebhookDialog({
 }: CreateWebhookDialogProps) {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    endpoint: '',
+    url: '',
     events: [] as string[],
     enabled: true
   })
@@ -40,7 +40,7 @@ export function CreateWebhookDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.endpoint.trim()) {
+    if (!formData.url.trim()) {
       toast.error('Webhook endpoint URL is required')
       return
     }
@@ -52,7 +52,7 @@ export function CreateWebhookDialog({
 
     // Validate URL format
     try {
-      new URL(formData.endpoint.trim())
+      new URL(formData.url.trim())
     } catch {
       toast.error('Please enter a valid URL')
       return
@@ -62,14 +62,14 @@ export function CreateWebhookDialog({
     
     try {
       await api.webhooks.create({
-        endpoint: formData.endpoint.trim(),
+        url: formData.url.trim(),
         events: formData.events,
         enabled: formData.enabled
       })
       
       // Reset form
       setFormData({
-        endpoint: '',
+        url: '',
         events: [],
         enabled: true
       })
@@ -135,12 +135,12 @@ export function CreateWebhookDialog({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="endpoint">Webhook Endpoint URL *</Label>
+                  <Label htmlFor="url">Webhook URL *</Label>
                   <Input
-                    id="endpoint"
+                    id="url"
                     type="url"
-                    value={formData.endpoint}
-                    onChange={(e) => setFormData(prev => ({ ...prev, endpoint: e.target.value }))}
+                    value={formData.url}
+                    onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
                     placeholder="https://your-app.com/webhooks/keygen"
                     disabled={loading}
                     required

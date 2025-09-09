@@ -30,7 +30,7 @@ export function EditWebhookDialog({
 }: EditWebhookDialogProps) {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    endpoint: '',
+    url: '',
     events: [] as string[],
     enabled: true
   })
@@ -44,7 +44,7 @@ export function EditWebhookDialog({
   useEffect(() => {
     if (webhook) {
       setFormData({
-        endpoint: webhook.attributes.endpoint,
+        url: webhook.attributes.url,
         events: [...webhook.attributes.events],
         enabled: webhook.attributes.enabled
       })
@@ -54,8 +54,8 @@ export function EditWebhookDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.endpoint.trim()) {
-      toast.error('Webhook endpoint URL is required')
+    if (!formData.url.trim()) {
+      toast.error('Webhook URL is required')
       return
     }
 
@@ -66,7 +66,7 @@ export function EditWebhookDialog({
 
     // Validate URL format
     try {
-      new URL(formData.endpoint.trim())
+      new URL(formData.url.trim())
     } catch {
       toast.error('Please enter a valid URL')
       return
@@ -76,7 +76,7 @@ export function EditWebhookDialog({
     
     try {
       await api.webhooks.update(webhook.id, {
-        endpoint: formData.endpoint.trim(),
+        url: formData.url.trim(),
         events: formData.events,
         enabled: formData.enabled
       })
@@ -145,12 +145,12 @@ export function EditWebhookDialog({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="endpoint">Webhook Endpoint URL *</Label>
+                  <Label htmlFor="url">Webhook URL *</Label>
                   <Input
-                    id="endpoint"
+                    id="url"
                     type="url"
-                    value={formData.endpoint}
-                    onChange={(e) => setFormData(prev => ({ ...prev, endpoint: e.target.value }))}
+                    value={formData.url}
+                    onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
                     placeholder="https://your-app.com/webhooks/keygen"
                     disabled={loading}
                     required

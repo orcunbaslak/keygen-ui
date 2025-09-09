@@ -117,7 +117,7 @@ export function WebhookManagement() {
   }
 
   const filteredWebhooks = webhooks.filter(webhook => 
-    webhook.attributes.endpoint.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    webhook.attributes.url.toLowerCase().includes(searchTerm.toLowerCase()) ||
     webhook.attributes.events.some(event => event.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
@@ -130,7 +130,7 @@ export function WebhookManagement() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 lg:px-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -149,7 +149,7 @@ export function WebhookManagement() {
       <Card>
         <CardHeader>
           <CardTitle>Search Webhooks</CardTitle>
-          <CardDescription>Find webhooks by endpoint URL or events</CardDescription>
+          <CardDescription>Find webhooks by URL or events</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center space-x-2">
@@ -186,7 +186,7 @@ export function WebhookManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Endpoint</TableHead>
+                  <TableHead>URL</TableHead>
                   <TableHead>Events</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
@@ -206,7 +206,7 @@ export function WebhookManagement() {
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <WebhookIcon className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-mono text-sm">{webhook.attributes.endpoint}</span>
+                          <span className="font-mono text-sm">{webhook.attributes.url}</span>
                         </div>
                       </TableCell>
                       <TableCell>

@@ -67,7 +67,7 @@ export function DeleteWebhookDialog({
               <span className="text-sm font-medium">Endpoint:</span>
             </div>
             <p className="text-sm font-mono bg-background p-2 rounded border">
-              {webhook.attributes.endpoint}
+              {webhook.attributes.url}
             </p>
             
             <div>

@@ -243,9 +243,9 @@ export interface RequestLog extends KeygenResource {
 
 // Webhook
 export interface Webhook extends KeygenResource {
-  type: 'webhooks';
+  type: 'webhook-endpoints';
   attributes: {
-    endpoint: string;
+    url: string;
     events: string[];
     signingKey?: string;
     enabled: boolean;
@@ -330,6 +330,6 @@ export interface RequestLogFilters extends PaginationOptions {
 
 export interface WebhookFilters extends PaginationOptions {
   enabled?: boolean;
-  endpoint?: string;
+  url?: string;
   events?: string[];
 }

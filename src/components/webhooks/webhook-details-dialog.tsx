@@ -61,7 +61,7 @@ export function WebhookDetailsDialog({
   }
 
   const handleCopyEndpoint = () => {
-    navigator.clipboard.writeText(webhook.attributes.endpoint)
+    navigator.clipboard.writeText(webhook.attributes.url)
     toast.success('Endpoint URL copied to clipboard')
   }
 
@@ -122,7 +122,7 @@ export function WebhookDetailsDialog({
                   <label className="text-sm font-medium text-muted-foreground">Endpoint URL</label>
                   <div className="flex items-center gap-2 mt-1">
                     <code className="text-sm bg-muted px-2 py-1 rounded flex-1">
-                      {webhook.attributes.endpoint}
+                      {webhook.attributes.url}
                     </code>
                     <Button
                       size="sm"
