@@ -207,6 +207,12 @@ You should now have a fully functional Keygen UI running locally.
 
 ---
 
+## 📚 Docs
+
+- Start here: [AGENTS.md](./AGENTS.md) — index for all project docs and guidance for agents.
+
+---
+
 ## 📖 Documentation
 
 ### API Integration

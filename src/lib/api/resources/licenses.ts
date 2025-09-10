@@ -40,6 +40,9 @@ export class LicenseResource {
     metadata?: Record<string, any>;
     expiry?: string;
     maxUses?: number;
+    key?: string;
+    protected?: boolean;
+    permissions?: string[];
   }): Promise<KeygenResponse<License>> {
     const body = {
       data: {
@@ -49,6 +52,11 @@ export class LicenseResource {
           metadata: licenseData.metadata || {},
           expiry: licenseData.expiry,
           maxUses: licenseData.maxUses,
+          ...(licenseData.key ? { key: licenseData.key } : {}),
+          ...(licenseData.protected !== undefined ? { protected: licenseData.protected } : {}),
+          ...(licenseData.permissions && licenseData.permissions.length > 0
+            ? { permissions: licenseData.permissions }
+            : {}),
         },
         relationships: {
           policy: {
@@ -70,6 +78,40 @@ export class LicenseResource {
 
     return this.client.request<License>('licenses', {
       method: 'POST',
+      body,
+    });
+  }
+
+  /**
+   * Attach users to license (many-to-many users relationship)
+   */
+  async attachUsers(id: string, userIds: string[]): Promise<KeygenResponse<any>> {
+    const body = {
+      data: userIds.map(userId => ({
+        type: 'users',
+        id: userId,
+      })),
+    };
+
+    return this.client.request(`licenses/${id}/relationships/users`, {
+      method: 'POST',
+      body,
+    });
+  }
+
+  /**
+   * Detach users from license
+   */
+  async detachUsers(id: string, userIds: string[]): Promise<void> {
+    const body = {
+      data: userIds.map(userId => ({
+        type: 'users',
+        id: userId,
+      })),
+    };
+
+    await this.client.request(`licenses/${id}/relationships/users`, {
+      method: 'DELETE',
       body,
     });
   }
