@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, Webhook as WebhookIcon } from 'lucide-react'
-import { toast } from 'sonner'
+// Removed toast import - now handled by error utilities
+import { handleCrudError } from '@/lib/utils/error-handling'
 
 interface DeleteWebhookDialogProps {
   webhook: Webhook
@@ -31,16 +32,10 @@ export function DeleteWebhookDialog({
     try {
       await api.webhooks.delete(webhook.id)
       onWebhookDeleted()
-    } catch (error: any) {
-      console.error('Failed to delete webhook:', error)
-      if (error.status === 404) {
-        toast.error('Webhook not found - it may have already been deleted')
-        onWebhookDeleted() // Refresh to remove from list
-      } else if (error.status === 403) {
-        toast.error('Permission denied - insufficient access rights')
-      } else {
-        toast.error(`Failed to delete webhook: ${error.message || 'Unknown error'}`)
-      }
+    } catch (error: unknown) {
+      handleCrudError(error, 'delete', 'Webhook', {
+        onNotFound: () => onWebhookDeleted()
+      })
     } finally {
       setLoading(false)
     }

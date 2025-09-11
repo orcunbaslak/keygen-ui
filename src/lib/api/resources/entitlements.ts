@@ -92,7 +92,7 @@ export class EntitlementResource {
   /**
    * Get entitlement licenses
    */
-  async getLicenses(id: string, options: ListOptions = {}): Promise<KeygenResponse<any[]>> {
+  async getLicenses(id: string, options: ListOptions = {}): Promise<KeygenResponse<unknown[]>> {
     const params: Record<string, unknown> = {};
     if (options.limit) params.limit = options.limit;
     if (options.page) params.page = options.page;
@@ -103,7 +103,7 @@ export class EntitlementResource {
   /**
    * Attach entitlement to licenses
    */
-  async attachToLicenses(id: string, licenseIds: string[]): Promise<KeygenResponse<any>> {
+  async attachToLicenses(id: string, licenseIds: string[]): Promise<KeygenResponse<unknown>> {
     const body = {
       data: licenseIds.map(licenseId => ({
         type: 'licenses',

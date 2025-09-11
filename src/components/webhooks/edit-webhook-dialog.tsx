@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
+import { handleCrudError } from '@/lib/utils/error-handling'
 
 interface EditWebhookDialogProps {
   webhook: Webhook
@@ -82,18 +83,10 @@ export function EditWebhookDialog({
       })
       
       onWebhookUpdated()
-    } catch (error: any) {
-      console.error('Failed to update webhook:', error)
-      if (error.status === 404) {
-        toast.error('Webhook not found - it may have been deleted')
-        onWebhookUpdated() // Refresh to remove from list
-      } else if (error.status === 422) {
-        toast.error('Invalid webhook data - check URL and events')
-      } else if (error.status === 403) {
-        toast.error('Permission denied - insufficient access rights')
-      } else {
-        toast.error(`Failed to update webhook: ${error.message || 'Unknown error'}`)
-      }
+    } catch (error: unknown) {
+      handleCrudError(error, 'update', 'Webhook', {
+        onNotFound: () => onWebhookUpdated()
+      })
     } finally {
       setLoading(false)
     }
@@ -190,9 +183,12 @@ export function EditWebhookDialog({
                             id={`${resource}-all`}
                             checked={isGroupFullySelected(events)}
                             onCheckedChange={(checked) => handleSelectAllInGroup(events, checked as boolean)}
-                            ref={(el: any) => {
+                            ref={(el: HTMLButtonElement | null) => {
                               if (el) {
-                                el.indeterminate = isGroupPartiallySelected(events)
+                                const input = el.querySelector('input')
+                                if (input) {
+                                  input.indeterminate = isGroupPartiallySelected(events)
+                                }
                               }
                             }}
                           />

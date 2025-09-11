@@ -36,7 +36,7 @@ export class UserResource {
     email: string;
     role?: User['attributes']['role'];
     password?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<KeygenResponse<User>> {
     const body = {
       data: {
@@ -66,7 +66,7 @@ export class UserResource {
     lastName?: string;
     email?: string;
     role?: User['attributes']['role'];
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<KeygenResponse<User>> {
     const body = {
       data: {
@@ -111,7 +111,7 @@ export class UserResource {
   /**
    * Reset user password
    */
-  async resetPassword(id: string): Promise<KeygenResponse<any>> {
+  async resetPassword(id: string): Promise<KeygenResponse<unknown>> {
     return this.client.request(`users/${id}/actions/reset-password`, {
       method: 'POST',
     });
@@ -142,7 +142,7 @@ export class UserResource {
     name?: string;
     expiry?: string;
     permissions?: string[];
-  } = {}): Promise<KeygenResponse<any>> {
+  } = {}): Promise<KeygenResponse<unknown>> {
     const body = {
       data: {
         type: 'tokens',
@@ -163,14 +163,14 @@ export class UserResource {
   /**
    * Get user licenses
    */
-  async getLicenses(id: string): Promise<KeygenResponse<any[]>> {
+  async getLicenses(id: string): Promise<KeygenResponse<unknown[]>> {
     return this.client.request(`users/${id}/licenses`);
   }
 
   /**
    * Get user machines
    */
-  async getMachines(id: string): Promise<KeygenResponse<any[]>> {
+  async getMachines(id: string): Promise<KeygenResponse<unknown[]>> {
     return this.client.request(`users/${id}/machines`);
   }
 
@@ -191,7 +191,7 @@ export class UserResource {
   /**
    * Get user's second factors
    */
-  async getSecondFactors(id: string): Promise<KeygenResponse<any[]>> {
+  async getSecondFactors(id: string): Promise<KeygenResponse<unknown[]>> {
     return this.client.request(`users/${id}/second-factors`);
   }
 
@@ -201,7 +201,7 @@ export class UserResource {
   async createSecondFactor(id: string, factorData: {
     secret: string;
     uri?: string;
-  }): Promise<KeygenResponse<any>> {
+  }): Promise<KeygenResponse<unknown>> {
     const body = {
       data: {
         type: 'second-factors',

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getKeygenApi } from '@/lib/api'
 import { Webhook } from '@/lib/types/keygen'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Plus, Search, MoreHorizontal, Webhook as WebhookIcon, Trash2, Edit, Eye, Play, Pause, TestTube } from 'lucide-react'
 import { toast } from 'sonner'
+import { handleLoadError, handleCrudError } from '@/lib/utils/error-handling'
 import { CreateWebhookDialog } from './create-webhook-dialog'
 import { EditWebhookDialog } from './edit-webhook-dialog'
 import { DeleteWebhookDialog } from './delete-webhook-dialog'
@@ -31,21 +32,20 @@ export function WebhookManagement() {
   
   const api = getKeygenApi()
 
-  const loadWebhooks = async () => {
+  const loadWebhooks = useCallback(async () => {
     try {
       const response = await api.webhooks.list({ limit: 100 })
       setWebhooks(response.data || [])
-    } catch (error: any) {
-      console.error('Failed to load webhooks:', error)
-      toast.error('Failed to load webhooks')
+    } catch (error: unknown) {
+      handleLoadError(error, 'webhooks')
     } finally {
       setLoading(false)
     }
-  }
+  }, [api.webhooks])
 
   useEffect(() => {
     loadWebhooks()
-  }, [])
+  }, [loadWebhooks])
 
   const handleToggleWebhook = async (webhook: Webhook) => {
     setTogglingWebhooks(prev => new Set(prev).add(webhook.id))
@@ -59,9 +59,10 @@ export function WebhookManagement() {
         toast.success('Webhook enabled')
       }
       loadWebhooks()
-    } catch (error: any) {
-      console.error('Failed to toggle webhook:', error)
-      toast.error(`Failed to ${webhook.attributes.enabled ? 'disable' : 'enable'} webhook`)
+    } catch (error: unknown) {
+      handleCrudError(error, 'update', 'Webhook', {
+        customMessage: `Failed to ${webhook.attributes.enabled ? 'disable' : 'enable'} webhook`
+      })
     } finally {
       setTogglingWebhooks(prev => {
         const next = new Set(prev)
@@ -75,9 +76,10 @@ export function WebhookManagement() {
     try {
       await api.webhooks.test(webhook.id)
       toast.success('Test webhook sent successfully')
-    } catch (error: any) {
-      console.error('Failed to test webhook:', error)
-      toast.error('Failed to send test webhook')
+    } catch (error: unknown) {
+      handleCrudError(error, 'update', 'Webhook', {
+        customMessage: 'Failed to send test webhook'
+      })
     }
   }
 

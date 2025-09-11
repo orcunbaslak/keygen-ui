@@ -104,7 +104,7 @@ export class GroupResource {
   /**
    * Get group licenses
    */
-  async getLicenses(id: string, options: ListOptions = {}): Promise<KeygenResponse<any[]>> {
+  async getLicenses(id: string, options: ListOptions = {}): Promise<KeygenResponse<unknown[]>> {
     const params: Record<string, unknown> = {};
     if (options.limit) params.limit = options.limit;
     if (options.page) params.page = options.page;
@@ -115,7 +115,7 @@ export class GroupResource {
   /**
    * Get group users
    */
-  async getUsers(id: string, options: ListOptions = {}): Promise<KeygenResponse<any[]>> {
+  async getUsers(id: string, options: ListOptions = {}): Promise<KeygenResponse<unknown[]>> {
     const params: Record<string, unknown> = {};
     if (options.limit) params.limit = options.limit;
     if (options.page) params.page = options.page;
@@ -126,7 +126,7 @@ export class GroupResource {
   /**
    * Add user to group
    */
-  async addUser(id: string, userId: string): Promise<KeygenResponse<any>> {
+  async addUser(id: string, userId: string): Promise<KeygenResponse<unknown>> {
     const body = {
       data: { type: 'users', id: userId },
     };
@@ -154,7 +154,7 @@ export class GroupResource {
   /**
    * Add license to group
    */
-  async addLicense(id: string, licenseId: string): Promise<KeygenResponse<any>> {
+  async addLicense(id: string, licenseId: string): Promise<KeygenResponse<unknown>> {
     const body = {
       data: { type: 'licenses', id: licenseId },
     };

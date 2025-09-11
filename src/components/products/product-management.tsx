@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getKeygenApi } from '@/lib/api'
 import { Product } from '@/lib/types/keygen'
 import { Button } from '@/components/ui/button'
@@ -42,7 +42,8 @@ import {
   Trash2,
   ExternalLink,
 } from 'lucide-react'
-import { toast } from 'sonner'
+// No direct toasts here; using centralized error handlers where needed
+import { handleLoadError } from '@/lib/utils/error-handling'
 import { CreateProductDialog } from './create-product-dialog'
 import { EditProductDialog } from './edit-product-dialog'
 import { DeleteProductDialog } from './delete-product-dialog'
@@ -58,22 +59,21 @@ export function ProductManagement() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const api = getKeygenApi()
 
-  useEffect(() => {
-    loadProducts()
-  }, [])
-
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     try {
       setLoading(true)
       const response = await api.products.list({ limit: 50 })
       setProducts(response.data || [])
-    } catch (error: any) {
-      console.error('Failed to load products:', error)
-      toast.error('Failed to load products')
+    } catch (error: unknown) {
+      handleLoadError(error, 'products')
     } finally {
       setLoading(false)
     }
-  }
+  }, [api.products])
+
+  useEffect(() => {
+    loadProducts()
+  }, [loadProducts])
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = !searchTerm || 

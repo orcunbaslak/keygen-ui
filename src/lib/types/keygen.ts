@@ -39,6 +39,13 @@ export interface KeygenError {
   links?: Record<string, string>;
 }
 
+// API Error type for catch blocks
+export interface ApiError {
+  status?: number;
+  message?: string;
+  code?: string;
+}
+
 // Authentication
 export interface AuthTokenResponse {
   data: {
@@ -91,7 +98,7 @@ export interface License extends KeygenResource {
     scheme: string;
     encrypted: boolean;
     expiry?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     created: string;
     updated: string;
   };
@@ -126,7 +133,7 @@ export interface Product extends KeygenResource {
     distributionStrategy: 'LICENSED' | 'OPEN' | 'CLOSED';
     platforms?: string[];
     permissions?: string[];
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     created: string;
     updated: string;
   };

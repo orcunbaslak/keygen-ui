@@ -14,6 +14,7 @@ import { AlertTriangle, Trash2 } from 'lucide-react'
 import { getKeygenApi } from '@/lib/api'
 import { toast } from 'sonner'
 import { Product } from '@/lib/types/keygen'
+import { handleCrudError } from '@/lib/utils/error-handling'
 
 interface DeleteProductDialogProps {
   product: Product | null
@@ -40,11 +41,15 @@ export function DeleteProductDialog({
       // First check if product exists by trying to fetch it
       try {
         await api.products.get(product.id)
-      } catch (error: any) {
-        if (error.status === 404) {
-          toast.error('Product not found. It may have already been deleted.')
-          onOpenChange(false)
-          onProductDeleted?.()
+      } catch (error: unknown) {
+        handleCrudError(error, 'delete', 'Product', {
+          onNotFound: () => {
+            onOpenChange(false)
+            onProductDeleted?.()
+          },
+          customMessage: 'Product not found. It may have already been deleted.'
+        })
+        if (error && typeof error === 'object' && 'status' in error && (error as { status: unknown }).status === 404) {
           return
         }
         throw error
@@ -55,20 +60,13 @@ export function DeleteProductDialog({
       toast.success(`Product "${product.attributes.name}" deleted successfully`)
       onOpenChange(false)
       onProductDeleted?.()
-    } catch (error: any) {
-      console.error('Delete failed:', error)
-      
-      if (error.status === 404) {
-        toast.error('Product not found. It may have already been deleted.')
-        onOpenChange(false)
-        onProductDeleted?.() // Still refresh the list
-      } else if (error.status === 422) {
-        toast.error('Cannot delete product. It may have associated licenses or policies.')
-      } else if (error.status === 403) {
-        toast.error('You do not have permission to delete this product.')
-      } else {
-        toast.error('Failed to delete product: ' + (error.message || 'Unknown error'))
-      }
+    } catch (error: unknown) {
+      handleCrudError(error, 'delete', 'Product', {
+        onNotFound: () => {
+          onOpenChange(false)
+          onProductDeleted?.()
+        }
+      })
     } finally {
       setLoading(false)
     }

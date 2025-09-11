@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getKeygenApi } from '@/lib/api'
 import { Entitlement } from '@/lib/types/keygen'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Plus, Search, MoreHorizontal, Shield, Trash2, Edit, Eye, Code } from 'lucide-react'
 import { toast } from 'sonner'
+import { handleLoadError } from '@/lib/utils/error-handling'
 import { CreateEntitlementDialog } from './create-entitlement-dialog'
 import { EditEntitlementDialog } from './edit-entitlement-dialog'
 import { DeleteEntitlementDialog } from './delete-entitlement-dialog'
@@ -29,21 +30,20 @@ export function EntitlementManagement() {
   
   const api = getKeygenApi()
 
-  const loadEntitlements = async () => {
+  const loadEntitlements = useCallback(async () => {
     try {
       const response = await api.entitlements.list({ limit: 100 })
       setEntitlements(response.data || [])
-    } catch (error: any) {
-      console.error('Failed to load entitlements:', error)
-      toast.error('Failed to load entitlements')
+    } catch (error: unknown) {
+      handleLoadError(error, 'entitlements')
     } finally {
       setLoading(false)
     }
-  }
+  }, [api.entitlements])
 
   useEffect(() => {
     loadEntitlements()
-  }, [])
+  }, [loadEntitlements])
 
   const handleEdit = (entitlement: Entitlement) => {
     setSelectedEntitlement(entitlement)

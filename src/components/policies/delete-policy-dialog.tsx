@@ -14,6 +14,7 @@ import { AlertTriangle, Trash2 } from 'lucide-react'
 import { getKeygenApi } from '@/lib/api'
 import { toast } from 'sonner'
 import { Policy } from '@/lib/types/keygen'
+import { handleCrudError } from '@/lib/utils/error-handling'
 
 interface DeletePolicyDialogProps {
   policy: Policy
@@ -38,20 +39,10 @@ export function DeletePolicyDialog({
       toast.success('Policy deleted successfully')
       onPolicyDeleted()
       onOpenChange(false)
-    } catch (error: any) {
-      console.error('Delete policy error:', error)
-      
-      // Handle specific error cases
-      if (error.status === 404) {
-        toast.error('Policy not found - it may have already been deleted')
-        onPolicyDeleted() // Refresh the list
-      } else if (error.status === 422) {
-        toast.error('Cannot delete policy - it may be in use by active licenses')
-      } else if (error.status === 403) {
-        toast.error('Permission denied - you do not have permission to delete this policy')
-      } else {
-        toast.error(`Failed to delete policy: ${error.message || 'Unknown error'}`)
-      }
+    } catch (error: unknown) {
+      handleCrudError(error, 'delete', 'Policy', {
+        onNotFound: () => onPolicyDeleted()
+      })
     } finally {
       setLoading(false)
     }

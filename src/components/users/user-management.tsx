@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getKeygenApi } from '@/lib/api'
 import { User } from '@/lib/types/keygen'
 import { Button } from '@/components/ui/button'
@@ -47,7 +47,9 @@ import {
   CheckCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { handleLoadError, handleCrudError } from '@/lib/utils/error-handling'
 import { CreateUserDialog } from './create-user-dialog'
+import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 
 export function UserManagement() {
   const [users, setUsers] = useState<User[]>([])
@@ -55,23 +57,27 @@ export function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const api = getKeygenApi()
+  const [confirmBanOpen, setConfirmBanOpen] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [pendingUser, setPendingUser] = useState<User | null>(null)
+  const [pendingAction, setPendingAction] = useState<'ban' | 'unban' | 'delete' | null>(null)
+  const [confirmLoading, setConfirmLoading] = useState(false)
 
-  useEffect(() => {
-    loadUsers()
-  }, [])
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       setLoading(true)
       const response = await api.users.list({ limit: 50 })
       setUsers(response.data || [])
-    } catch (error: any) {
-      console.error('Failed to load users:', error)
-      toast.error('Failed to load users')
+    } catch (error: unknown) {
+      handleLoadError(error, 'users')
     } finally {
       setLoading(false)
     }
-  }
+  }, [api.users])
+
+  useEffect(() => {
+    loadUsers()
+  }, [loadUsers])
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = !searchTerm || 
@@ -106,37 +112,43 @@ export function UserManagement() {
     })
   }
 
-  const handleBanUser = async (user: User) => {
-    const action = user.attributes.banned ? 'unban' : 'ban'
-    if (!confirm(`Are you sure you want to ${action} ${user.attributes.email}?`)) {
-      return
-    }
-
-    try {
-      if (user.attributes.banned) {
-        await api.users.unban(user.id)
-        toast.success('User unbanned successfully')
-      } else {
-        await api.users.ban(user.id)
-        toast.success('User banned successfully')
-      }
-      await loadUsers()
-    } catch {
-      toast.error(`Failed to ${action} user`)
-    }
+  const handleBanUser = (user: User) => {
+    setPendingUser(user)
+    setPendingAction(user.attributes.banned ? 'unban' : 'ban')
+    setConfirmBanOpen(true)
   }
 
-  const handleDeleteUser = async (user: User) => {
-    if (!confirm(`Are you sure you want to delete ${user.attributes.email}? This action cannot be undone.`)) {
-      return
-    }
+  const handleDeleteUser = (user: User) => {
+    setPendingUser(user)
+    setPendingAction('delete')
+    setConfirmDeleteOpen(true)
+  }
 
+  const executePendingAction = async () => {
+    if (!pendingUser || !pendingAction) return
+    setConfirmLoading(true)
     try {
-      await api.users.delete(user.id)
+      if (pendingAction === 'ban') {
+        await api.users.ban(pendingUser.id)
+        toast.success('User banned successfully')
+      } else if (pendingAction === 'unban') {
+        await api.users.unban(pendingUser.id)
+        toast.success('User unbanned successfully')
+      } else if (pendingAction === 'delete') {
+        await api.users.delete(pendingUser.id)
+        toast.success('User deleted successfully')
+      }
       await loadUsers()
-      toast.success('User deleted successfully')
-    } catch {
-      toast.error('Failed to delete user')
+      setConfirmBanOpen(false)
+      setConfirmDeleteOpen(false)
+      setPendingUser(null)
+      setPendingAction(null)
+    } catch (error: unknown) {
+      const action = pendingAction === 'delete' ? 'delete' : 'update'
+      const custom = pendingAction === 'delete' ? 'Failed to delete user' : `Failed to ${pendingAction} user`
+      handleCrudError(error, action as 'delete' | 'update', 'User', { customMessage: custom })
+    } finally {
+      setConfirmLoading(false)
     }
   }
 
@@ -392,6 +404,28 @@ export function UserManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Confirm dialogs */}
+      <ConfirmDialog
+        open={confirmBanOpen}
+        onOpenChange={setConfirmBanOpen}
+        title={pendingAction === 'unban' ? 'Unban user?' : 'Ban user?'}
+        description={pendingUser ? `Are you sure you want to ${pendingAction} ${pendingUser.attributes.email}?` : ''}
+        confirmLabel={pendingAction === 'unban' ? 'Unban' : 'Ban'}
+        destructive={pendingAction === 'ban'}
+        loading={confirmLoading}
+        onConfirm={executePendingAction}
+      />
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="Delete user?"
+        description={pendingUser ? `Are you sure you want to delete ${pendingUser.attributes.email}? This action cannot be undone.` : ''}
+        confirmLabel="Delete"
+        destructive
+        loading={confirmLoading}
+        onConfirm={executePendingAction}
+      />
     </div>
   )
 }

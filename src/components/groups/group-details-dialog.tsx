@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getKeygenApi } from '@/lib/api'
-import { Group } from '@/lib/types/keygen'
+import { Group, License, User } from '@/lib/types/keygen'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Users, KeyRound, Calendar, Info } from 'lucide-react'
-import { toast } from 'sonner'
+// toast not needed; using centralized error handlers
+import { handleLoadError } from '@/lib/utils/error-handling'
 
 interface GroupDetailsDialogProps {
   group: Group
@@ -21,24 +22,23 @@ export function GroupDetailsDialog({
   open,
   onOpenChange
 }: GroupDetailsDialogProps) {
-  const [licenses, setLicenses] = useState<any[]>([])
-  const [users, setUsers] = useState<any[]>([])
+  const [licenses, setLicenses] = useState<License[]>([])
+  const [users, setUsers] = useState<User[]>([])
   const [loadingLicenses, setLoadingLicenses] = useState(false)
   const [loadingUsers, setLoadingUsers] = useState(false)
   
   const api = getKeygenApi()
 
-  const loadGroupDetails = async () => {
+  const loadGroupDetails = useCallback(async () => {
     if (!group.id) return
 
     // Load licenses
     setLoadingLicenses(true)
     try {
       const licensesResponse = await api.groups.getLicenses(group.id, { limit: 10 })
-      setLicenses(licensesResponse.data || [])
-    } catch (error: any) {
-      console.error('Failed to load group licenses:', error)
-      toast.error('Failed to load group licenses')
+      setLicenses((licensesResponse.data as License[]) || [])
+    } catch (error: unknown) {
+      handleLoadError(error, 'group licenses')
     } finally {
       setLoadingLicenses(false)
     }
@@ -47,20 +47,19 @@ export function GroupDetailsDialog({
     setLoadingUsers(true)
     try {
       const usersResponse = await api.groups.getUsers(group.id, { limit: 10 })
-      setUsers(usersResponse.data || [])
-    } catch (error: any) {
-      console.error('Failed to load group users:', error)
-      toast.error('Failed to load group users')
+      setUsers((usersResponse.data as User[]) || [])
+    } catch (error: unknown) {
+      handleLoadError(error, 'group users')
     } finally {
       setLoadingUsers(false)
     }
-  }
+  }, [api.groups, group.id])
 
   useEffect(() => {
     if (open && group.id) {
       loadGroupDetails()
     }
-  }, [open, group.id])
+  }, [open, group.id, loadGroupDetails])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -178,7 +177,7 @@ export function GroupDetailsDialog({
                 </div>
               ) : licenses.length > 0 ? (
                 <div className="space-y-2">
-                  {licenses.map((license: any) => (
+                  {licenses.map((license) => (
                     <div key={license.id} className="flex items-center justify-between p-2 border rounded">
                       <div>
                         <p className="text-sm font-medium">
@@ -222,7 +221,7 @@ export function GroupDetailsDialog({
                 </div>
               ) : users.length > 0 ? (
                 <div className="space-y-2">
-                  {users.map((user: any) => (
+                  {users.map((user) => (
                     <div key={user.id} className="flex items-center justify-between p-2 border rounded">
                       <div>
                         <p className="text-sm font-medium">

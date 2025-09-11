@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import { getKeygenApi } from '@/lib/api'
 import { Entitlement } from '@/lib/types/keygen'
+import { handleCrudError } from '@/lib/utils/error-handling'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, Code } from 'lucide-react'
-import { toast } from 'sonner'
+// Removed toast import - now handled by error utilities
 
 interface DeleteEntitlementDialogProps {
   entitlement: Entitlement
@@ -31,18 +32,10 @@ export function DeleteEntitlementDialog({
     try {
       await api.entitlements.delete(entitlement.id)
       onEntitlementDeleted()
-    } catch (error: any) {
-      console.error('Failed to delete entitlement:', error)
-      if (error.status === 404) {
-        toast.error('Entitlement not found - it may have already been deleted')
-        onEntitlementDeleted() // Refresh to remove from list
-      } else if (error.status === 422) {
-        toast.error('Cannot delete entitlement - it may be in use by licenses')
-      } else if (error.status === 403) {
-        toast.error('Permission denied - insufficient access rights')
-      } else {
-        toast.error(`Failed to delete entitlement: ${error.message || 'Unknown error'}`)
-      }
+    } catch (error: unknown) {
+      handleCrudError(error, 'delete', 'Entitlement', {
+        onNotFound: () => onEntitlementDeleted()
+      })
     } finally {
       setLoading(false)
     }
@@ -81,7 +74,7 @@ export function DeleteEntitlementDialog({
           <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-lg">
             <p className="text-sm text-destructive">
               <strong>Warning:</strong> Deleting this entitlement will remove it from all associated 
-              licenses. This may affect your users' access to features controlled by this entitlement.
+              licenses. This may affect your users&apos; access to features controlled by this entitlement.
             </p>
           </div>
         </div>

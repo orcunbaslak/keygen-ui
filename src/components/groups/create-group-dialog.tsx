@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
+import { handleFormError } from '@/lib/utils/error-handling'
 
 interface CreateGroupDialogProps {
   open: boolean
@@ -40,7 +41,12 @@ export function CreateGroupDialog({
     setLoading(true)
     
     try {
-      const groupData: any = {
+      const groupData: {
+        name: string;
+        maxLicenses?: number;
+        maxMachines?: number;
+        maxUsers?: number;
+      } = {
         name: formData.name.trim()
       }
 
@@ -66,15 +72,8 @@ export function CreateGroupDialog({
       })
       
       onGroupCreated()
-    } catch (error: any) {
-      console.error('Failed to create group:', error)
-      if (error.status === 422) {
-        toast.error('Invalid group data - please check your input')
-      } else if (error.status === 403) {
-        toast.error('Permission denied - insufficient access rights')
-      } else {
-        toast.error(`Failed to create group: ${error.message || 'Unknown error'}`)
-      }
+    } catch (error: unknown) {
+      handleFormError(error, 'Group')
     } finally {
       setLoading(false)
     }

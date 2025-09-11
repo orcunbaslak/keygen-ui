@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -30,6 +29,7 @@ import { format } from 'date-fns'
 import { Calendar as CalendarIcon, Plus, HelpCircle, RefreshCcw, X } from 'lucide-react'
 import { getKeygenApi } from '@/lib/api'
 import { Entitlement, Group, Policy, User } from '@/lib/types/keygen'
+import { handleFormError, handleLoadError } from '@/lib/utils/error-handling'
 import { toast } from 'sonner'
 
 interface CreateLicenseDialogProps {
@@ -63,13 +63,7 @@ export function CreateLicenseDialog({ onLicenseCreated }: CreateLicenseDialogPro
 
   const api = getKeygenApi()
 
-  useEffect(() => {
-    if (open) {
-      loadInitialData()
-    }
-  }, [open])
-
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       setLoadingData(true)
       const [policiesResponse, usersResponse, groupsResponse, entitlementsResponse] = await Promise.all([
@@ -82,13 +76,18 @@ export function CreateLicenseDialog({ onLicenseCreated }: CreateLicenseDialogPro
       setUsers(usersResponse.data || [])
       setGroups(groupsResponse.data || [])
       setEntitlements(entitlementsResponse.data || [])
-    } catch (error: any) {
-      console.error('Failed to load initial data:', error)
-      toast.error('Failed to load initial data')
+    } catch (error: unknown) {
+      handleLoadError(error, 'initial data')
     } finally {
       setLoadingData(false)
     }
-  }
+  }, [api.policies, api.users, api.groups, api.entitlements])
+
+  useEffect(() => {
+    if (open) {
+      loadInitialData()
+    }
+  }, [open, loadInitialData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -129,7 +128,6 @@ export function CreateLicenseDialog({ onLicenseCreated }: CreateLicenseDialogPro
       if (createdId && selectedUsers.length > 0) {
         // Best-effort: attach users if supported
         try {
-          // @ts-ignore - method added to resource
           await api.licenses.attachUsers(createdId, selectedUsers)
         } catch (err) {
           console.warn('Attaching users failed or unsupported:', err)
@@ -152,8 +150,10 @@ export function CreateLicenseDialog({ onLicenseCreated }: CreateLicenseDialogPro
       setSelectedUsers([])
       setSelectedEntitlements([])
       onLicenseCreated?.()
-    } catch (error: any) {
-      toast.error('Failed to create license: ' + (error.message || 'Unknown error'))
+    } catch (error: unknown) {
+      handleFormError(error, 'License', {
+        customMessage: 'Failed to create license'
+      })
     } finally {
       setLoading(false)
     }

@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, X, Shield, Unlock, Lock } from 'lucide-react'
 import { getKeygenApi } from '@/lib/api'
 import { toast } from 'sonner'
+import { handleFormError } from '@/lib/utils/error-handling'
 
 interface CreateProductDialogProps {
   onProductCreated?: () => void
@@ -55,7 +56,7 @@ export function CreateProductDialog({ onProductCreated }: CreateProductDialogPro
     try {
       setLoading(true)
       
-      let metadata: Record<string, any> | undefined
+      let metadata: Record<string, unknown> | undefined
       if (formData.metadata.trim()) {
         try {
           metadata = JSON.parse(formData.metadata)
@@ -77,8 +78,8 @@ export function CreateProductDialog({ onProductCreated }: CreateProductDialogPro
       setOpen(false)
       resetForm()
       onProductCreated?.()
-    } catch (error: any) {
-      toast.error('Failed to create product: ' + (error.message || 'Unknown error'))
+    } catch (error: unknown) {
+      handleFormError(error, 'Product')
     } finally {
       setLoading(false)
     }
@@ -154,7 +155,7 @@ export function CreateProductDialog({ onProductCreated }: CreateProductDialogPro
               <Label htmlFor="strategy">Distribution Strategy</Label>
               <Select
                 value={formData.distributionStrategy}
-                onValueChange={(value) => setFormData({ ...formData, distributionStrategy: value as any })}
+                onValueChange={(value: 'LICENSED' | 'OPEN' | 'CLOSED') => setFormData({ ...formData, distributionStrategy: value })}
               >
                 <SelectTrigger>
                   {getStrategyIcon(formData.distributionStrategy)}
@@ -233,7 +234,7 @@ export function CreateProductDialog({ onProductCreated }: CreateProductDialogPro
             <Label htmlFor="metadata">Metadata (JSON)</Label>
             <Textarea
               id="metadata"
-              placeholder='{"version": "1.0.0", "description": "Product description"}'
+              placeholder='{&quot;version&quot;: &quot;1.0.0&quot;, &quot;description&quot;: &quot;Product description&quot;}'
               value={formData.metadata}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, metadata: e.target.value })}
               rows={3}

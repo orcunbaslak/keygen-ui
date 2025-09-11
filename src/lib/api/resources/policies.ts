@@ -52,7 +52,7 @@ export class PolicyResource {
     machineLeasingStrategy?: 'PER_LICENSE' | 'PER_USER' | 'ALWAYS_ALLOW';
     processLeasingStrategy?: 'PER_MACHINE' | 'PER_LICENSE' | 'PER_USER' | 'ALWAYS_ALLOW';
     overageStrategy?: 'NO_OVERAGE' | 'ALWAYS_ALLOW_OVERAGE' | 'ALLOW_1_25X_OVERAGE' | 'ALLOW_1_5X_OVERAGE' | 'ALLOW_2X_OVERAGE';
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<KeygenResponse<Policy>> {
     const { productId, ...attributes } = data;
     
@@ -100,7 +100,7 @@ export class PolicyResource {
     machineLeasingStrategy?: 'PER_LICENSE' | 'PER_USER' | 'ALWAYS_ALLOW';
     processLeasingStrategy?: 'PER_MACHINE' | 'PER_LICENSE' | 'PER_USER' | 'ALWAYS_ALLOW';
     overageStrategy?: 'NO_OVERAGE' | 'ALWAYS_ALLOW_OVERAGE' | 'ALLOW_1_25X_OVERAGE' | 'ALLOW_1_5X_OVERAGE' | 'ALLOW_2X_OVERAGE';
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<KeygenResponse<Policy>> {
     return this.client.request<Policy>(`/policies/${policyId}`, {
       method: 'PATCH',

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { getKeygenApi } from '@/lib/api';
 import { User } from '@/lib/types/keygen';
+import { handleAuthError } from '@/lib/utils/error-handling';
 
 interface AuthContextType {
   user: User | null;
@@ -50,7 +51,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (response.data) {
         setUser(response.data as User);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Auth check failed:', err);
       setError('Authentication failed');
       // Clear invalid token
@@ -79,9 +80,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (response.data) {
         setUser(response.data as User);
       }
-    } catch (err: any) {
-      console.error('Login failed:', err);
-      setError(err.message || 'Login failed');
+    } catch (err: unknown) {
+      handleAuthError(err);
+      setError('Login failed');
       throw err;
     } finally {
       setLoading(false);

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getKeygenApi } from '@/lib/api'
 import { Webhook } from '@/lib/types/keygen'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton'
 import { Webhook as WebhookIcon, Calendar, Info, Activity, TestTube, Copy } from 'lucide-react'
 import { toast } from 'sonner'
+import { handleLoadError, handleCrudError } from '@/lib/utils/error-handling'
 
 interface WebhookDetailsDialogProps {
   webhook: Webhook
@@ -22,31 +23,30 @@ export function WebhookDetailsDialog({
   open,
   onOpenChange
 }: WebhookDetailsDialogProps) {
-  const [deliveries, setDeliveries] = useState<any[]>([])
+  const [deliveries, setDeliveries] = useState<Array<{ id: string; attributes?: { event?: string; created?: string; successful?: boolean } }>>([])
   const [loadingDeliveries, setLoadingDeliveries] = useState(false)
   
   const api = getKeygenApi()
 
-  const loadWebhookDeliveries = async () => {
+  const loadWebhookDeliveries = useCallback(async () => {
     if (!webhook.id) return
 
     setLoadingDeliveries(true)
     try {
       const deliveriesResponse = await api.webhooks.getDeliveries(webhook.id, { limit: 10 })
-      setDeliveries(deliveriesResponse.data || [])
-    } catch (error: any) {
-      console.error('Failed to load webhook deliveries:', error)
-      // Don't show error toast for this as it might not be supported
+      setDeliveries((deliveriesResponse.data || []) as Array<{ id: string; attributes?: { event?: string; created?: string; successful?: boolean } }>)
+    } catch (error: unknown) {
+      handleLoadError(error, 'webhook deliveries', { silent: true })
     } finally {
       setLoadingDeliveries(false)
     }
-  }
+  }, [api.webhooks, webhook.id])
 
   useEffect(() => {
     if (open && webhook.id) {
       loadWebhookDeliveries()
     }
-  }, [open, webhook.id])
+  }, [open, webhook.id, loadWebhookDeliveries])
 
   const handleTestWebhook = async () => {
     try {
@@ -54,9 +54,10 @@ export function WebhookDetailsDialog({
       toast.success('Test webhook sent successfully')
       // Refresh deliveries to show the test event
       loadWebhookDeliveries()
-    } catch (error: any) {
-      console.error('Failed to test webhook:', error)
-      toast.error('Failed to send test webhook')
+    } catch (error: unknown) {
+      handleCrudError(error, 'update', 'Webhook', {
+        customMessage: 'Failed to send test webhook'
+      })
     }
   }
 
@@ -250,7 +251,7 @@ export function WebhookDetailsDialog({
                 </div>
               ) : deliveries.length > 0 ? (
                 <div className="space-y-2">
-                  {deliveries.map((delivery: any, index) => (
+                  {deliveries.map((delivery, index) => (
                     <div key={delivery.id || index} className="flex items-center justify-between p-2 border rounded">
                       <div className="space-y-1">
                         <p className="text-sm font-medium">

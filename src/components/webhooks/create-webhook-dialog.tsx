@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
+import { handleFormError } from '@/lib/utils/error-handling'
 
 interface CreateWebhookDialogProps {
   open: boolean
@@ -75,15 +76,8 @@ export function CreateWebhookDialog({
       })
       
       onWebhookCreated()
-    } catch (error: any) {
-      console.error('Failed to create webhook:', error)
-      if (error.status === 422) {
-        toast.error('Invalid webhook data - check URL and events')
-      } else if (error.status === 403) {
-        toast.error('Permission denied - insufficient access rights')
-      } else {
-        toast.error(`Failed to create webhook: ${error.message || 'Unknown error'}`)
-      }
+    } catch (error: unknown) {
+      handleFormError(error, 'Webhook')
     } finally {
       setLoading(false)
     }
@@ -180,9 +174,12 @@ export function CreateWebhookDialog({
                             id={`${resource}-all`}
                             checked={isGroupFullySelected(events)}
                             onCheckedChange={(checked) => handleSelectAllInGroup(events, checked as boolean)}
-                            ref={(el: any) => {
+                            ref={(el: HTMLButtonElement | null) => {
                               if (el) {
-                                el.indeterminate = isGroupPartiallySelected(events)
+                                const input = el.querySelector('input')
+                                if (input) {
+                                  input.indeterminate = isGroupPartiallySelected(events)
+                                }
                               }
                             }}
                           />

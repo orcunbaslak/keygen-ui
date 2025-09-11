@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getKeygenApi } from '@/lib/api'
 import { License } from '@/lib/types/keygen'
 import { Button } from '@/components/ui/button'
@@ -46,6 +46,7 @@ import {
   Download,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { handleLoadError, handleCrudError } from '@/lib/utils/error-handling'
 import { CreateLicenseDialog } from './create-license-dialog'
 import { DeleteLicenseDialog } from './delete-license-dialog'
 import { EditLicenseDialog } from './edit-license-dialog'
@@ -60,25 +61,24 @@ export function LicenseManagement() {
   const [selectedLicense, setSelectedLicense] = useState<License | null>(null)
   const api = getKeygenApi()
 
-  useEffect(() => {
-    loadLicenses()
-  }, [])
-
-  const loadLicenses = async () => {
+  const loadLicenses = useCallback(async () => {
     try {
       setLoading(true)
       const response = await api.licenses.list({
         limit: 50,
-        ...(statusFilter !== 'all' && { status: statusFilter as any })
+        ...(statusFilter !== 'all' && { status: statusFilter as License['attributes']['status'] })
       })
       setLicenses(response.data || [])
-    } catch (error: any) {
-      console.error('Failed to load licenses:', error)
-      toast.error('Failed to load licenses')
+    } catch (error: unknown) {
+      handleLoadError(error, 'licenses')
     } finally {
       setLoading(false)
     }
-  }
+  }, [api.licenses, statusFilter])
+
+  useEffect(() => {
+    loadLicenses()
+  }, [loadLicenses])
 
   const filteredLicenses = licenses.filter(license => {
     const matchesSearch = !searchTerm || 
@@ -113,8 +113,8 @@ export function LicenseManagement() {
       await api.licenses.suspend(license.id)
       await loadLicenses()
       toast.success('License suspended successfully')
-    } catch {
-      toast.error('Failed to suspend license')
+    } catch (error: unknown) {
+      handleCrudError(error, 'update', 'License', { customMessage: 'Failed to suspend license' })
     }
   }
 
@@ -123,8 +123,8 @@ export function LicenseManagement() {
       await api.licenses.reinstate(license.id)
       await loadLicenses()
       toast.success('License reinstated successfully')
-    } catch {
-      toast.error('Failed to reinstate license')
+    } catch (error: unknown) {
+      handleCrudError(error, 'update', 'License', { customMessage: 'Failed to reinstate license' })
     }
   }
 
@@ -133,8 +133,8 @@ export function LicenseManagement() {
       await api.licenses.renew(license.id)
       await loadLicenses()
       toast.success('License renewed successfully')
-    } catch {
-      toast.error('Failed to renew license')
+    } catch (error: unknown) {
+      handleCrudError(error, 'update', 'License', { customMessage: 'Failed to renew license' })
     }
   }
 
@@ -156,14 +156,15 @@ export function LicenseManagement() {
   const handleGenerateToken = async (license: License) => {
     try {
       const response = await api.licenses.generateActivationToken(license.id)
-      if (response.data?.attributes?.token) {
-        await navigator.clipboard.writeText(response.data.attributes.token)
+      const tokenData = response.data as { attributes?: { token?: string } }
+      if (tokenData?.attributes?.token) {
+        await navigator.clipboard.writeText(tokenData.attributes.token)
         toast.success('Activation token copied to clipboard')
       } else {
         toast.error('Failed to generate activation token')
       }
-    } catch {
-      toast.error('Failed to generate activation token')
+    } catch (error: unknown) {
+      handleCrudError(error, 'create', 'Activation token', { customMessage: 'Failed to generate activation token' })
     }
   }
 

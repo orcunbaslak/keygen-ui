@@ -3,10 +3,11 @@
 import { useState } from 'react'
 import { getKeygenApi } from '@/lib/api'
 import { Group } from '@/lib/types/keygen'
+import { handleCrudError } from '@/lib/utils/error-handling'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AlertTriangle } from 'lucide-react'
-import { toast } from 'sonner'
+// Removed toast import - now handled by error utilities
 
 interface DeleteGroupDialogProps {
   group: Group
@@ -30,18 +31,10 @@ export function DeleteGroupDialog({
     try {
       await api.groups.delete(group.id)
       onGroupDeleted()
-    } catch (error: any) {
-      console.error('Failed to delete group:', error)
-      if (error.status === 404) {
-        toast.error('Group not found - it may have already been deleted')
-        onGroupDeleted() // Refresh to remove from list
-      } else if (error.status === 422) {
-        toast.error('Cannot delete group - it may contain users or licenses')
-      } else if (error.status === 403) {
-        toast.error('Permission denied - insufficient access rights')
-      } else {
-        toast.error(`Failed to delete group: ${error.message || 'Unknown error'}`)
-      }
+    } catch (error: unknown) {
+      handleCrudError(error, 'delete', 'Group', {
+        onNotFound: () => onGroupDeleted()
+      })
     } finally {
       setLoading(false)
     }
@@ -56,7 +49,7 @@ export function DeleteGroupDialog({
             Delete Group
           </DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete the group "{group.attributes.name}"?
+            Are you sure you want to delete the group &quot;{group.attributes.name}&quot;?
             This action cannot be undone.
           </DialogDescription>
         </DialogHeader>

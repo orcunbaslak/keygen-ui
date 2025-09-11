@@ -17,6 +17,7 @@ import { Edit } from 'lucide-react'
 import { getKeygenApi } from '@/lib/api'
 import { toast } from 'sonner'
 import { License } from '@/lib/types/keygen'
+import { handleCrudError } from '@/lib/utils/error-handling'
 
 interface EditLicenseDialogProps {
   license: License
@@ -58,7 +59,7 @@ export function EditLicenseDialog({
     try {
       setLoading(true)
       
-      const updates: any = {}
+      const updates: Partial<License['attributes']> = {}
       
       // Only include fields that have values or have changed
       if (formData.name.trim() !== (license.attributes.name || '')) {
@@ -66,11 +67,11 @@ export function EditLicenseDialog({
       }
       
       if (formData.expiry !== (license.attributes.expiry?.split('T')[0] || '')) {
-        updates.expiry = formData.expiry ? new Date(formData.expiry).toISOString() : null
+        updates.expiry = formData.expiry ? new Date(formData.expiry).toISOString() : undefined
       }
       
       if (formData.maxUses !== (license.attributes.maxUses?.toString() || '')) {
-        updates.maxUses = formData.maxUses ? parseInt(formData.maxUses) : null
+        updates.maxUses = formData.maxUses ? parseInt(formData.maxUses) : undefined
       }
       
       if (formData.metadata !== (license.attributes.metadata ? JSON.stringify(license.attributes.metadata, null, 2) : '')) {
@@ -95,18 +96,8 @@ export function EditLicenseDialog({
       
       onLicenseUpdated()
       onOpenChange(false)
-    } catch (error: any) {
-      console.error('Update license error:', error)
-      
-      if (error.status === 404) {
-        toast.error('License not found - it may have been deleted')
-      } else if (error.status === 422) {
-        toast.error('Invalid data provided - please check your inputs')
-      } else if (error.status === 403) {
-        toast.error('Permission denied - you do not have permission to update this license')
-      } else {
-        toast.error(`Failed to update license: ${error.message || 'Unknown error'}`)
-      }
+    } catch (error: unknown) {
+      handleCrudError(error, 'update', 'License')
     } finally {
       setLoading(false)
     }
@@ -183,7 +174,7 @@ export function EditLicenseDialog({
             <Label htmlFor="metadata">Metadata (JSON)</Label>
             <Textarea
               id="metadata"
-              placeholder='{"key": "value"}'
+              placeholder='{&quot;key&quot;: &quot;value&quot;}'
               value={formData.metadata}
               onChange={(e) => setFormData({ ...formData, metadata: e.target.value })}
               rows={4}

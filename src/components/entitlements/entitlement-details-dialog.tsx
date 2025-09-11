@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getKeygenApi } from '@/lib/api'
-import { Entitlement } from '@/lib/types/keygen'
+import { Entitlement, License } from '@/lib/types/keygen'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Shield, KeyRound, Calendar, Info, Code } from 'lucide-react'
-import { toast } from 'sonner'
+// toast not needed; using centralized error handlers
+import { handleLoadError } from '@/lib/utils/error-handling'
 
 interface EntitlementDetailsDialogProps {
   entitlement: Entitlement
@@ -21,32 +22,31 @@ export function EntitlementDetailsDialog({
   open,
   onOpenChange
 }: EntitlementDetailsDialogProps) {
-  const [licenses, setLicenses] = useState<any[]>([])
+  const [licenses, setLicenses] = useState<License[]>([])
   const [loadingLicenses, setLoadingLicenses] = useState(false)
   
   const api = getKeygenApi()
 
-  const loadEntitlementDetails = async () => {
+  const loadEntitlementDetails = useCallback(async () => {
     if (!entitlement.id) return
 
     // Load associated licenses
     setLoadingLicenses(true)
     try {
       const licensesResponse = await api.entitlements.getLicenses(entitlement.id, { limit: 10 })
-      setLicenses(licensesResponse.data || [])
-    } catch (error: any) {
-      console.error('Failed to load entitlement licenses:', error)
-      toast.error('Failed to load associated licenses')
+      setLicenses((licensesResponse.data as License[]) || [])
+    } catch (error: unknown) {
+      handleLoadError(error, 'entitlement licenses')
     } finally {
       setLoadingLicenses(false)
     }
-  }
+  }, [api.entitlements, entitlement.id])
 
   useEffect(() => {
     if (open && entitlement.id) {
       loadEntitlementDetails()
     }
-  }, [open, entitlement.id])
+  }, [open, entitlement.id, loadEntitlementDetails])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -141,7 +141,7 @@ export function EntitlementDetailsDialog({
                 </div>
               ) : licenses.length > 0 ? (
                 <div className="space-y-2">
-                  {licenses.map((license: any) => (
+                  {licenses.map((license) => (
                     <div key={license.id} className="flex items-center justify-between p-3 border rounded">
                       <div className="space-y-1">
                         <p className="text-sm font-medium">

@@ -130,14 +130,14 @@ export class MachineResource {
   /**
    * Get machine processes
    */
-  async getProcesses(id: string): Promise<KeygenResponse<any[]>> {
+  async getProcesses(id: string): Promise<KeygenResponse<unknown[]>> {
     return this.client.request(`machines/${id}/processes`);
   }
 
   /**
    * Get machine components
    */
-  async getComponents(id: string): Promise<KeygenResponse<any[]>> {
+  async getComponents(id: string): Promise<KeygenResponse<unknown[]>> {
     return this.client.request(`machines/${id}/components`);
   }
 

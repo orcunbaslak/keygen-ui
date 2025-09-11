@@ -1,22 +1,20 @@
 import {
   KeygenResponse,
-  KeygenError,
+  // KeygenError removed - using new error types
   ApiRequestOptions,
   PaginationOptions,
 } from '@/lib/types/keygen';
+import {
+  KeygenApiError,
+  NetworkError,
+  ParseError,
+  AuthError,
+  ERROR_CODES,
+  HTTP_STATUS
+} from '@/lib/types/errors';
 
-export class KeygenApiError extends Error {
-  public errors: KeygenError[];
-  public status?: number;
-
-  constructor(errors: KeygenError[], status?: number) {
-    const message = errors.map(e => `${e.title}: ${e.detail}`).join(', ');
-    super(message);
-    this.name = 'KeygenApiError';
-    this.errors = errors;
-    this.status = status;
-  }
-}
+// Error types are now defined in @/lib/types/errors
+// This client throws proper typed errors instead of generic Error instances
 
 export interface KeygenClientConfig {
   apiUrl: string;
@@ -101,40 +99,89 @@ export class KeygenClient {
       
       try {
         data = await response.json();
-      } catch {
-        // JSON parsing failed - this is normal for empty responses (like DELETE)
+      } catch (jsonError) {
+        // JSON parsing failed
         if (response.ok && method === 'DELETE') {
           // DELETE requests often return empty bodies, which is normal
           data = null;
         } else if (!response.ok) {
-          // For error responses, if we can't parse JSON, create a basic error
-          data = null;
+          // For error responses, if we can't parse JSON, create a parse error
+          const parseError: ParseError = {
+            message: `Failed to parse error response: ${jsonError instanceof Error ? jsonError.message : 'Unknown parse error'}`,
+            code: ERROR_CODES.PARSE_ERROR,
+            originalError: jsonError instanceof Error ? jsonError : undefined
+          };
+          throw parseError;
         } else {
-          // For other successful responses, empty JSON might be unexpected
+          // For other successful responses, log warning but continue
           console.warn('Could not parse JSON response, but request was successful');
           data = null;
         }
       }
 
-      // Handle API errors
+      // Handle API errors with proper error types
       if (!response.ok) {
-        throw new KeygenApiError(
-          data?.errors || [{ title: 'HTTP Error', detail: `Request failed with status ${response.status}` }],
-          response.status
-        );
+        const apiError: KeygenApiError = {
+          message: data?.errors?.[0]?.detail || data?.errors?.[0]?.title || `HTTP ${response.status} Error`,
+          status: response.status,
+          code: data?.errors?.[0]?.code || `HTTP_${response.status}`,
+          title: data?.errors?.[0]?.title || 'API Error',
+          detail: data?.errors?.[0]?.detail || `Request failed with status ${response.status}`,
+          source: data?.errors?.[0]?.source,
+          errors: data?.errors || []
+        };
+
+        // Handle specific auth errors
+        if (response.status === HTTP_STATUS.UNAUTHORIZED || response.status === HTTP_STATUS.FORBIDDEN) {
+          const authError: AuthError = {
+            message: apiError.message,
+            status: response.status,
+            code: response.status === HTTP_STATUS.UNAUTHORIZED ? ERROR_CODES.UNAUTHORIZED : ERROR_CODES.AUTH_FAILED
+          };
+          throw authError;
+        }
+
+        throw apiError;
       }
 
       return data;
     } catch (error) {
-      if (error instanceof KeygenApiError) {
+      // Re-throw our custom error types
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        typeof (error as { code: unknown }).code === 'string'
+      ) {
         throw error;
       }
 
-      // Handle network errors
-      throw new KeygenApiError([{
-        title: 'Network Error',
-        detail: error instanceof Error ? error.message : 'A network error occurred'
-      }]);
+      // Handle network/fetch errors
+      if (error instanceof TypeError) {
+        const networkError: NetworkError = {
+          message: error.message || 'Network connection failed',
+          code: ERROR_CODES.NETWORK_ERROR,
+          originalError: error
+        };
+        throw networkError;
+      }
+
+      // Handle other JavaScript errors
+      if (error instanceof Error) {
+        const appError = {
+          message: error.message || 'An unexpected error occurred',
+          code: ERROR_CODES.APP_ERROR,
+          stack: error.stack
+        };
+        throw appError;
+      }
+
+      // Fallback for unknown errors
+      const unknownError = {
+        message: 'An unknown error occurred',
+        code: ERROR_CODES.APP_ERROR
+      };
+      throw unknownError;
     }
   }
 
@@ -183,10 +230,14 @@ export class KeygenClient {
       return response.data.attributes.token;
     }
 
-    throw new KeygenApiError([{
-      title: 'Authentication Failed',
-      detail: 'Failed to retrieve token from authentication response'
-    }]);
+    const authError: KeygenApiError = {
+      message: 'Authentication Failed',
+      status: 401,
+      title: 'Authentication Failed', 
+      detail: 'Failed to retrieve token from authentication response',
+      code: ERROR_CODES.AUTH_FAILED
+    };
+    throw authError;
   }
 
   /**

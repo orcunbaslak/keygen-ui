@@ -148,7 +148,7 @@ export class WebhookResource {
   /**
    * Test a webhook by sending a test event
    */
-  async test(id: string, eventType = 'webhook.test'): Promise<KeygenResponse<any>> {
+  async test(id: string, eventType = 'webhook.test'): Promise<KeygenResponse<unknown>> {
     const body = {
       data: {
         type: 'webhook-events',
@@ -170,7 +170,7 @@ export class WebhookResource {
   async getDeliveries(id: string, options: {
     limit?: number;
     page?: number;
-  } = {}): Promise<KeygenResponse<any[]>> {
+  } = {}): Promise<KeygenResponse<unknown[]>> {
     const params: Record<string, unknown> = {};
     if (options.limit) params.limit = options.limit;
     if (options.page) params.page = options.page;

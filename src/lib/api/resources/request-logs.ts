@@ -55,7 +55,7 @@ export class RequestLogResource {
       end: string;
     };
     groupBy?: 'day' | 'hour' | 'method' | 'status';
-  } = {}): Promise<KeygenResponse<any>> {
+  } = {}): Promise<KeygenResponse<unknown>> {
     const params: Record<string, unknown> = {};
     
     if (filters.dateRange?.start) {
@@ -79,7 +79,7 @@ export class RequestLogResource {
       start: string;
       end: string;
     };
-  } = {}): Promise<KeygenResponse<any>> {
+  } = {}): Promise<KeygenResponse<unknown>> {
     const params: Record<string, unknown> = {};
     
     if (filters.dateRange?.start) {
@@ -101,7 +101,7 @@ export class RequestLogResource {
       end: string;
     };
     limit?: number;
-  } = {}): Promise<KeygenResponse<any>> {
+  } = {}): Promise<KeygenResponse<unknown>> {
     const params: Record<string, unknown> = {};
     
     if (filters.dateRange?.start) {
@@ -125,7 +125,7 @@ export class RequestLogResource {
       start: string;
       end: string;
     };
-  } = {}): Promise<KeygenResponse<any>> {
+  } = {}): Promise<KeygenResponse<unknown>> {
     const params: Record<string, unknown> = {};
     
     if (filters.dateRange?.start) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getKeygenApi } from '@/lib/api'
 import { Machine } from '@/lib/types/keygen'
 import { Button } from '@/components/ui/button'
@@ -44,7 +44,9 @@ import {
   Cpu,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { handleLoadError, handleCrudError } from '@/lib/utils/error-handling'
 import { ActivateMachineDialog } from './activate-machine-dialog'
+import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 
 export function MachineManagement() {
   const [machines, setMachines] = useState<Machine[]>([])
@@ -52,26 +54,28 @@ export function MachineManagement() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const api = getKeygenApi()
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [pendingMachine, setPendingMachine] = useState<Machine | null>(null)
+  const [confirmLoading, setConfirmLoading] = useState(false)
 
-  useEffect(() => {
-    loadMachines()
-  }, [])
-
-  const loadMachines = async () => {
+  const loadMachines = useCallback(async () => {
     try {
       setLoading(true)
       const response = await api.machines.list({
         limit: 50,
-        ...(statusFilter !== 'all' && { status: statusFilter as any })
+        ...(statusFilter !== 'all' && { status: statusFilter })
       })
       setMachines(response.data || [])
-    } catch (error: any) {
-      console.error('Failed to load machines:', error)
-      toast.error('Failed to load machines')
+    } catch (error: unknown) {
+      handleLoadError(error, 'machines')
     } finally {
       setLoading(false)
     }
-  }
+  }, [api.machines, statusFilter])
+
+  useEffect(() => {
+    loadMachines()
+  }, [loadMachines])
 
   const filteredMachines = machines.filter(machine => {
     const matchesSearch = !searchTerm || 
@@ -115,17 +119,26 @@ export function MachineManagement() {
     })
   }
 
-  const handleDeleteMachine = async (machine: Machine) => {
-    if (!confirm('Are you sure you want to delete this machine? This action cannot be undone.')) {
-      return
-    }
+  const handleDeleteMachine = (machine: Machine) => {
+    setPendingMachine(machine)
+    setConfirmDeleteOpen(true)
+  }
 
+  const confirmDeleteMachine = async () => {
+    if (!pendingMachine) return
+    setConfirmLoading(true)
     try {
-      await api.machines.deactivate(machine.id)
+      await api.machines.deactivate(pendingMachine.id)
       await loadMachines()
       toast.success('Machine deleted successfully')
-    } catch {
-      toast.error('Failed to delete machine')
+      setConfirmDeleteOpen(false)
+      setPendingMachine(null)
+    } catch (error: unknown) {
+      handleCrudError(error, 'delete', 'Machine', {
+        customMessage: 'Failed to delete machine'
+      })
+    } finally {
+      setConfirmLoading(false)
     }
   }
 
@@ -359,6 +372,16 @@ export function MachineManagement() {
           )}
         </CardContent>
       </Card>
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="Delete machine?"
+        description="Are you sure you want to delete this machine? This action cannot be undone."
+        confirmLabel="Delete"
+        destructive
+        loading={confirmLoading}
+        onConfirm={confirmDeleteMachine}
+      />
     </div>
   )
 }

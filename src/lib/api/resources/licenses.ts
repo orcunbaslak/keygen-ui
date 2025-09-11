@@ -37,7 +37,7 @@ export class LicenseResource {
     userId?: string;
     groupId?: string;
     name?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     expiry?: string;
     maxUses?: number;
     key?: string;
@@ -85,7 +85,7 @@ export class LicenseResource {
   /**
    * Attach users to license (many-to-many users relationship)
    */
-  async attachUsers(id: string, userIds: string[]): Promise<KeygenResponse<any>> {
+  async attachUsers(id: string, userIds: string[]): Promise<KeygenResponse<unknown>> {
     const body = {
       data: userIds.map(userId => ({
         type: 'users',
@@ -121,7 +121,7 @@ export class LicenseResource {
    */
   async update(id: string, updates: {
     name?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     expiry?: string;
     maxUses?: number;
   }): Promise<KeygenResponse<License>> {
@@ -201,7 +201,7 @@ export class LicenseResource {
   /**
    * Generate activation token for license
    */
-  async generateActivationToken(id: string, ttl = 3600): Promise<KeygenResponse<any>> {
+  async generateActivationToken(id: string, ttl = 3600): Promise<KeygenResponse<unknown>> {
     const body = {
       data: {
         type: 'tokens',
@@ -220,14 +220,14 @@ export class LicenseResource {
   /**
    * Get license entitlements
    */
-  async getEntitlements(id: string): Promise<KeygenResponse<any[]>> {
+  async getEntitlements(id: string): Promise<KeygenResponse<unknown[]>> {
     return this.client.request(`licenses/${id}/entitlements`);
   }
 
   /**
    * Attach entitlements to license
    */
-  async attachEntitlements(id: string, entitlementIds: string[]): Promise<KeygenResponse<any>> {
+  async attachEntitlements(id: string, entitlementIds: string[]): Promise<KeygenResponse<unknown>> {
     const body = {
       data: entitlementIds.map(entitlementId => ({
         type: 'entitlements',
@@ -261,7 +261,7 @@ export class LicenseResource {
   /**
    * Get license machines
    */
-  async getMachines(id: string): Promise<KeygenResponse<any[]>> {
+  async getMachines(id: string): Promise<KeygenResponse<unknown[]>> {
     return this.client.request(`licenses/${id}/machines`);
   }
 

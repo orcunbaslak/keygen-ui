@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { getKeygenApi } from '@/lib/api'
 import { Entitlement } from '@/lib/types/keygen'
+import { handleCrudError } from '@/lib/utils/error-handling'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -62,18 +63,10 @@ export function EditEntitlementDialog({
       })
       
       onEntitlementUpdated()
-    } catch (error: any) {
-      console.error('Failed to update entitlement:', error)
-      if (error.status === 404) {
-        toast.error('Entitlement not found - it may have been deleted')
-        onEntitlementUpdated() // Refresh to remove from list
-      } else if (error.status === 422) {
-        toast.error('Invalid entitlement data - code may already exist')
-      } else if (error.status === 403) {
-        toast.error('Permission denied - insufficient access rights')
-      } else {
-        toast.error(`Failed to update entitlement: ${error.message || 'Unknown error'}`)
-      }
+    } catch (error: unknown) {
+      handleCrudError(error, 'update', 'Entitlement', {
+        onNotFound: () => onEntitlementUpdated()
+      })
     } finally {
       setLoading(false)
     }

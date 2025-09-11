@@ -24,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Plus, Shield, User } from 'lucide-react'
 import { getKeygenApi } from '@/lib/api'
 import { toast } from 'sonner'
+import { handleFormError } from '@/lib/utils/error-handling'
 
 interface CreateUserDialogProps {
   onUserCreated?: () => void
@@ -70,7 +71,7 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
     try {
       setLoading(true)
       
-      let metadata: Record<string, any> | undefined
+      let metadata: Record<string, unknown> | undefined
       if (formData.metadata.trim()) {
         try {
           metadata = JSON.parse(formData.metadata)
@@ -93,8 +94,8 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
       setOpen(false)
       resetForm()
       onUserCreated?.()
-    } catch (error: any) {
-      toast.error('Failed to create user: ' + (error.message || 'Unknown error'))
+    } catch (error: unknown) {
+      handleFormError(error, 'User')
     } finally {
       setLoading(false)
     }
@@ -148,7 +149,7 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
               <Label htmlFor="role">Role</Label>
               <Select
                 value={formData.role}
-                onValueChange={(value) => setFormData({ ...formData, role: value as any })}
+                onValueChange={(value: typeof formData.role) => setFormData({ ...formData, role: value })}
               >
                 <SelectTrigger>
                   {getRoleIcon(formData.role)}
@@ -246,7 +247,7 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
             <Label htmlFor="metadata">Metadata (JSON)</Label>
             <Textarea
               id="metadata"
-              placeholder='{"department": "Engineering", "location": "Remote"}'
+              placeholder='{&quot;department&quot;: &quot;Engineering&quot;, &quot;location&quot;: &quot;Remote&quot;}'
               value={formData.metadata}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, metadata: e.target.value })}
               rows={3}

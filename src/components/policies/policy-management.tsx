@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getKeygenApi } from '@/lib/api'
 import { Policy } from '@/lib/types/keygen'
 import { Button } from '@/components/ui/button'
@@ -42,6 +42,7 @@ import {
   Clock,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { handleLoadError } from '@/lib/utils/error-handling'
 import { CreatePolicyDialog } from './create-policy-dialog'
 import { DeletePolicyDialog } from './delete-policy-dialog'
 
@@ -54,22 +55,21 @@ export function PolicyManagement() {
   const [policyToDelete, setPolicyToDelete] = useState<Policy | null>(null)
   const api = getKeygenApi()
 
-  useEffect(() => {
-    loadPolicies()
-  }, [])
-
-  const loadPolicies = async () => {
+  const loadPolicies = useCallback(async () => {
     try {
       setLoading(true)
       const response = await api.policies.list({ limit: 50 })
       setPolicies(response.data || [])
-    } catch (error: any) {
-      console.error('Failed to load policies:', error)
-      toast.error('Failed to load policies')
+    } catch (error: unknown) {
+      handleLoadError(error, 'policies')
     } finally {
       setLoading(false)
     }
-  }
+  }, [api.policies])
+
+  useEffect(() => {
+    loadPolicies()
+  }, [loadPolicies])
 
   const filteredPolicies = policies.filter(policy => {
     const matchesSearch = !searchTerm || 

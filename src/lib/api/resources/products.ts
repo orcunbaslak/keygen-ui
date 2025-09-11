@@ -34,7 +34,7 @@ export class ProductResource {
     url?: string;
     distributionStrategy?: 'LICENSED' | 'OPEN' | 'CLOSED';
     platforms?: string[];
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<KeygenResponse<Product>> {
     return this.client.request<Product>('/products', {
       method: 'POST',
@@ -55,7 +55,7 @@ export class ProductResource {
     url?: string;
     distributionStrategy?: 'LICENSED' | 'OPEN' | 'CLOSED';
     platforms?: string[];
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<KeygenResponse<Product>> {
     return this.client.request<Product>(`/products/${productId}`, {
       method: 'PATCH',

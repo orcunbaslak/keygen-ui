@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
+import { handleFormError } from '@/lib/utils/error-handling'
 
 interface CreateEntitlementDialogProps {
   open: boolean
@@ -55,15 +56,8 @@ export function CreateEntitlementDialog({
       })
       
       onEntitlementCreated()
-    } catch (error: any) {
-      console.error('Failed to create entitlement:', error)
-      if (error.status === 422) {
-        toast.error('Invalid entitlement data - code may already exist')
-      } else if (error.status === 403) {
-        toast.error('Permission denied - insufficient access rights')
-      } else {
-        toast.error(`Failed to create entitlement: ${error.message || 'Unknown error'}`)
-      }
+    } catch (error: unknown) {
+      handleFormError(error, 'Entitlement')
     } finally {
       setLoading(false)
     }

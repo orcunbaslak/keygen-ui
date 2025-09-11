@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Key, Users, Monitor, Package } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -25,11 +25,7 @@ export function SectionCards() {
 
   const api = getKeygenApi()
 
-  useEffect(() => {
-    loadDashboardStats()
-  }, [])
-
-  const loadDashboardStats = async () => {
+  const loadDashboardStats = useCallback(async () => {
     try {
       const [licensesResponse, usersResponse, machinesResponse, productsResponse] = await Promise.all([
         api.licenses.list({ limit: 1 }).catch(() => ({ data: [], meta: { count: 0 } })),
@@ -49,7 +45,11 @@ export function SectionCards() {
       console.error('Failed to load dashboard stats:', error)
       setStats(prev => ({ ...prev, loading: false }))
     }
-  }
+  }, [api.licenses, api.users, api.machines, api.products])
+
+  useEffect(() => {
+    loadDashboardStats()
+  }, [loadDashboardStats])
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
       <Card className="@container/card">

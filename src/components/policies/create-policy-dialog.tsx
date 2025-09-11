@@ -26,7 +26,8 @@ import { Plus } from 'lucide-react'
 import { getKeygenApi } from '@/lib/api'
 import { toast } from 'sonner'
 import { Product } from '@/lib/types/keygen'
-import { useEffect } from 'react'
+import { handleFormError, handleLoadError } from '@/lib/utils/error-handling'
+import { useEffect, useCallback } from 'react'
 
 interface CreatePolicyDialogProps {
   onPolicyCreated?: () => void
@@ -66,24 +67,23 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
   const api = getKeygenApi()
 
   // Load products when dialog opens
-  useEffect(() => {
-    if (open && products.length === 0) {
-      loadProducts()
-    }
-  }, [open])
-
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     try {
       setProductsLoading(true)
       const response = await api.products.list({ limit: 50 })
       setProducts(response.data || [])
-    } catch (error) {
-      console.error('Failed to load products:', error)
-      toast.error('Failed to load products')
+    } catch (error: unknown) {
+      handleLoadError(error, 'products')
     } finally {
       setProductsLoading(false)
     }
-  }
+  }, [api.products])
+
+  useEffect(() => {
+    if (open && products.length === 0) {
+      loadProducts()
+    }
+  }, [open, products.length, loadProducts])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -102,8 +102,9 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
       setLoading(true)
       
       // Use EXACTLY the same minimal structure that worked in the test
-      const policyData: any = {
-        name: formData.name.trim()
+      const policyData: Record<string, unknown> = {
+        name: formData.name.trim(),
+        productId: formData.productId
       }
 
       // Only add duration if specified (like in the test)
@@ -152,7 +153,7 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
       //   }
       // }
 
-      await api.policies.create({ ...policyData, productId: formData.productId })
+      await api.policies.create(policyData as { name: string; productId: string; duration?: number })
 
       toast.success('Policy created successfully')
       setOpen(false)
@@ -182,8 +183,8 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
         metadata: ''
       })
       onPolicyCreated?.()
-    } catch (error: any) {
-      toast.error('Failed to create policy: ' + (error.message || 'Unknown error'))
+    } catch (error: unknown) {
+      handleFormError(error, 'Policy')
     } finally {
       setLoading(false)
     }
@@ -321,7 +322,7 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
                     <Label htmlFor="heartbeatCullStrategy">Cull Strategy</Label>
                     <Select
                       value={formData.heartbeatCullStrategy}
-                      onValueChange={(value: any) => setFormData({ ...formData, heartbeatCullStrategy: value })}
+                      onValueChange={(value: 'DEACTIVATE_DEAD' | 'KEEP_DEAD') => setFormData({ ...formData, heartbeatCullStrategy: value })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -336,7 +337,7 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
                     <Label htmlFor="heartbeatBasis">Heartbeat Basis</Label>
                     <Select
                       value={formData.heartbeatBasis}
-                      onValueChange={(value: any) => setFormData({ ...formData, heartbeatBasis: value })}
+                      onValueChange={(value: 'FROM_CREATION' | 'FROM_FIRST_VALIDATION') => setFormData({ ...formData, heartbeatBasis: value })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -360,7 +361,7 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
                 <Label htmlFor="expirationStrategy">Expiration Strategy</Label>
                 <Select
                   value={formData.expirationStrategy}
-                  onValueChange={(value: any) => setFormData({ ...formData, expirationStrategy: value })}
+                  onValueChange={(value: 'RESTRICT_ACCESS' | 'REVOKE_ACCESS' | 'MAINTAIN_ACCESS') => setFormData({ ...formData, expirationStrategy: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -376,7 +377,7 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
                 <Label htmlFor="authenticationStrategy">Authentication Strategy</Label>
                 <Select
                   value={formData.authenticationStrategy}
-                  onValueChange={(value: any) => setFormData({ ...formData, authenticationStrategy: value })}
+                  onValueChange={(value: 'TOKEN' | 'LICENSE' | 'MIXED' | 'NONE') => setFormData({ ...formData, authenticationStrategy: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -393,7 +394,7 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
                 <Label htmlFor="overageStrategy">Overage Strategy</Label>
                 <Select
                   value={formData.overageStrategy}
-                  onValueChange={(value: any) => setFormData({ ...formData, overageStrategy: value })}
+                  onValueChange={(value: 'NO_OVERAGE' | 'ALWAYS_ALLOW_OVERAGE' | 'ALLOW_1_25X_OVERAGE' | 'ALLOW_1_5X_OVERAGE' | 'ALLOW_2X_OVERAGE') => setFormData({ ...formData, overageStrategy: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -415,7 +416,7 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
             <Label htmlFor="metadata">Metadata (Optional)</Label>
             <Textarea
               id="metadata"
-              placeholder='{"description": "Policy description", "tags": ["enterprise"]}'
+              placeholder='{&quot;description&quot;: &quot;Policy description&quot;, &quot;tags&quot;: [&quot;enterprise&quot;]}'
               value={formData.metadata}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, metadata: e.target.value })}
               rows={3}

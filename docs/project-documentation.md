@@ -90,6 +90,17 @@ class ExampleResource {
 Key references:
 - Canonical Keygen guide: `docs/keygen-api-configuration.md`
 
+## Error Handling
+
+- Typed errors: the API client throws structured objects (not `Error` instances) per `src/lib/types/errors.ts` (e.g., `KeygenApiError`, `AuthError`, `NetworkError`, `ParseError`). Use guards from `src/lib/utils/error-guards.ts` when you need to branch on error type.
+- UI utilities: prefer the centralized helpers in `src/lib/utils/error-handling.ts`:
+  - `handleCrudError(error, operation, resourceType, options?)` for create/update/delete actions
+  - `handleLoadError(error, resourceType, options?)` for data loading
+  - `handleFormError(error, formType, options?)` for submissions
+- Notifications: all user-facing error feedback uses Sonner toasts. Do not use browser alert/prompt/confirm for errors. Success toasts remain inline in components.
+- Parsing and network: JSON parse failures yield `ParseError`; fetch/connection failures yield `NetworkError`. Auth-related HTTP codes map to `AuthError`.
+- Retry guidance: `isRetryableError` covers server and rate-limit scenarios; `getRetryDelay` provides sensible backoff hints.
+
 ## Feature Coverage
 
 - Licenses: full CRUD, suspend/reinstate, renew, activation tokens

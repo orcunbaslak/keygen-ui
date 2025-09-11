@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -23,6 +23,7 @@ import {
 import { Plus } from 'lucide-react'
 import { getKeygenApi } from '@/lib/api'
 import { License } from '@/lib/types/keygen'
+import { handleFormError, handleLoadError } from '@/lib/utils/error-handling'
 import { toast } from 'sonner'
 
 interface ActivateMachineDialogProps {
@@ -46,7 +47,7 @@ export function ActivateMachineDialog({ onMachineActivated }: ActivateMachineDia
 
   const api = getKeygenApi()
 
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       setLoadingData(true)
       // Load active licenses for machine activation
@@ -57,19 +58,18 @@ export function ActivateMachineDialog({ onMachineActivated }: ActivateMachineDia
       setLicenses(licensesResponse.data?.filter(license => 
         license.attributes.status === 'active'
       ) || [])
-    } catch (error) {
-      console.error('Failed to load licenses:', error)
-      toast.error('Failed to load licenses')
+    } catch (error: unknown) {
+      handleLoadError(error, 'licenses')
     } finally {
       setLoadingData(false)
     }
-  }
+  }, [api.licenses])
 
   useEffect(() => {
     if (open) {
       loadInitialData()
     }
-  }, [open])
+  }, [open, loadInitialData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -109,8 +109,8 @@ export function ActivateMachineDialog({ onMachineActivated }: ActivateMachineDia
         ip: ''
       })
       onMachineActivated?.()
-    } catch (error: any) {
-      toast.error('Failed to activate machine: ' + (error.message || 'Unknown error'))
+    } catch (error: unknown) {
+      handleFormError(error, 'Machine')
     } finally {
       setLoading(false)
     }

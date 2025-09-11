@@ -25,6 +25,7 @@ import { Package } from 'lucide-react'
 import { getKeygenApi } from '@/lib/api'
 import { toast } from 'sonner'
 import { Product } from '@/lib/types/keygen'
+import { handleCrudError } from '@/lib/utils/error-handling'
 
 interface EditProductDialogProps {
   product: Product | null
@@ -89,7 +90,7 @@ export function EditProductDialog({
     try {
       setLoading(true)
       
-      let metadata: Record<string, any> | undefined
+      let metadata: Record<string, unknown> | undefined
       if (formData.metadata.trim()) {
         try {
           metadata = JSON.parse(formData.metadata)
@@ -113,8 +114,8 @@ export function EditProductDialog({
       toast.success('Product updated successfully')
       onOpenChange(false)
       onProductUpdated?.()
-    } catch (error: any) {
-      toast.error('Failed to update product: ' + (error.message || 'Unknown error'))
+    } catch (error: unknown) {
+      handleCrudError(error, 'update', 'Product')
     } finally {
       setLoading(false)
     }
@@ -224,7 +225,7 @@ export function EditProductDialog({
               <Label htmlFor="edit-strategy">Strategy *</Label>
               <Select
                 value={formData.distributionStrategy}
-                onValueChange={(value) => setFormData({ ...formData, distributionStrategy: value as any })}
+                onValueChange={(value: 'LICENSED' | 'OPEN' | 'CLOSED') => setFormData({ ...formData, distributionStrategy: value })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -296,7 +297,7 @@ export function EditProductDialog({
               <Label htmlFor="edit-metadata">Custom Metadata (JSON)</Label>
               <Textarea
                 id="edit-metadata"
-                placeholder='{"version": "1.0.0", "category": "productivity"}'
+                placeholder='{&quot;version&quot;: &quot;1.0.0&quot;, &quot;category&quot;: &quot;productivity&quot;}'
                 value={formData.metadata}
                 onChange={(e) => setFormData({ ...formData, metadata: e.target.value })}
                 rows={3}

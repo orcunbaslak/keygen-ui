@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { getKeygenApi } from '@/lib/api'
 import { Group } from '@/lib/types/keygen'
+import { handleCrudError } from '@/lib/utils/error-handling'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -55,7 +56,12 @@ export function EditGroupDialog({
     setLoading(true)
     
     try {
-      const updates: any = {
+      const updates: {
+        name: string;
+        maxLicenses?: number;
+        maxMachines?: number;
+        maxUsers?: number;
+      } = {
         name: formData.name.trim()
       }
 
@@ -72,18 +78,10 @@ export function EditGroupDialog({
 
       await api.groups.update(group.id, updates)
       onGroupUpdated()
-    } catch (error: any) {
-      console.error('Failed to update group:', error)
-      if (error.status === 404) {
-        toast.error('Group not found - it may have been deleted')
-        onGroupUpdated() // Refresh to remove from list
-      } else if (error.status === 422) {
-        toast.error('Invalid group data - please check your input')
-      } else if (error.status === 403) {
-        toast.error('Permission denied - insufficient access rights')
-      } else {
-        toast.error(`Failed to update group: ${error.message || 'Unknown error'}`)
-      }
+    } catch (error: unknown) {
+      handleCrudError(error, 'update', 'Group', {
+        onNotFound: () => onGroupUpdated()
+      })
     } finally {
       setLoading(false)
     }

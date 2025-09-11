@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getKeygenApi } from '@/lib/api'
 import { Group } from '@/lib/types/keygen'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Plus, Search, MoreHorizontal, Users, Trash2, Edit, Eye } from 'lucide-react'
 import { toast } from 'sonner'
+import { handleLoadError } from '@/lib/utils/error-handling'
 import { CreateGroupDialog } from './create-group-dialog'
 import { EditGroupDialog } from './edit-group-dialog'
 import { DeleteGroupDialog } from './delete-group-dialog'
@@ -29,21 +30,20 @@ export function GroupManagement() {
   
   const api = getKeygenApi()
 
-  const loadGroups = async () => {
+  const loadGroups = useCallback(async () => {
     try {
       const response = await api.groups.list({ limit: 100 })
       setGroups(response.data || [])
-    } catch (error: any) {
-      console.error('Failed to load groups:', error)
-      toast.error('Failed to load groups')
+    } catch (error: unknown) {
+      handleLoadError(error, 'groups')
     } finally {
       setLoading(false)
     }
-  }
+  }, [api.groups])
 
   useEffect(() => {
     loadGroups()
-  }, [])
+  }, [loadGroups])
 
   const handleEdit = (group: Group) => {
     setSelectedGroup(group)
