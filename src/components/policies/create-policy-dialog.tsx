@@ -135,7 +135,7 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
         duration: parsedDuration,
         strict: formData.strict,
         floating: formData.floating,
-        concurrent: formData.concurrent,
+        //concurrent: formData.concurrent, //-> removed because of unpermitted params error
         protected: formData.protected,
         requireHeartbeat: formData.requireHeartbeat,
         heartbeatDuration: parsedHeartbeatDuration,
