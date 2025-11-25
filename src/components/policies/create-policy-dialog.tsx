@@ -256,7 +256,7 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
                   value={formData.duration}
                   onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                 />
-                <p className="text-xs text-muted-foreground">Leave empty for no expiration</p>
+                <p className="text-xs text-muted-foreground">Leave empty for no expiration.</p>
               </div>
             </div>
           </div>
