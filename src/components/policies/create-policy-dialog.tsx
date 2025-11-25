@@ -87,7 +87,7 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!formData.name.trim()) {
       toast.error('Policy name is required')
       return
@@ -98,62 +98,68 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
       return
     }
 
+    const parsedDuration = formData.duration.trim()
+      ? Number.parseInt(formData.duration, 10)
+      : undefined
+
+    if (Number.isNaN(parsedDuration)) {
+      toast.error('Duration must be a valid number of seconds')
+      return
+    }
+
+    const parsedHeartbeatDuration = formData.requireHeartbeat
+      ? Number.parseInt(formData.heartbeatDuration, 10)
+      : undefined
+
+    if (formData.requireHeartbeat && Number.isNaN(parsedHeartbeatDuration)) {
+      toast.error('Heartbeat duration must be a valid number of seconds')
+      return
+    }
+
+    let parsedMetadata: Record<string, unknown> | undefined
+
+    if (formData.metadata.trim()) {
+      try {
+        parsedMetadata = JSON.parse(formData.metadata)
+      } catch {
+        parsedMetadata = { notes: formData.metadata }
+      }
+    }
+
     try {
       setLoading(true)
-      
-      // Use EXACTLY the same minimal structure that worked in the test
-      const policyData: Record<string, unknown> = {
+
+      const policyData: Parameters<typeof api.policies.create>[0] = {
         name: formData.name.trim(),
-        productId: formData.productId
+        productId: formData.productId,
+        duration: parsedDuration,
+        strict: formData.strict,
+        floating: formData.floating,
+        concurrent: formData.concurrent,
+        protected: formData.protected,
+        requireHeartbeat: formData.requireHeartbeat,
+        heartbeatDuration: parsedHeartbeatDuration,
+        heartbeatCullStrategy: formData.requireHeartbeat
+          ? formData.heartbeatCullStrategy
+          : undefined,
+        heartbeatResurrectionStrategy: formData.requireHeartbeat
+          ? formData.heartbeatResurrectionStrategy
+          : undefined,
+        heartbeatBasis: formData.requireHeartbeat ? formData.heartbeatBasis : undefined,
+        machineUniquenessStrategy: formData.machineUniquenessStrategy,
+        machineMatchingStrategy: formData.machineMatchingStrategy,
+        expirationStrategy: formData.expirationStrategy,
+        expirationBasis: formData.expirationBasis,
+        renewalBasis: formData.renewalBasis,
+        transferStrategy: formData.transferStrategy,
+        authenticationStrategy: formData.authenticationStrategy,
+        machineLeasingStrategy: formData.machineLeasingStrategy,
+        processLeasingStrategy: formData.processLeasingStrategy,
+        overageStrategy: formData.overageStrategy,
+        metadata: parsedMetadata
       }
 
-      // Only add duration if specified (like in the test)
-      if (formData.duration && formData.duration.trim()) {
-        policyData.duration = parseInt(formData.duration)
-      }
-      
-      // These might be problematic - let's test without them first
-      // if (formData.concurrent) {
-      //   policyData.concurrent = true
-      // }
-      
-      // if (formData.protected) {
-      //   policyData.protected = true
-      // }
-      
-      // Skip heartbeat for now to isolate the issue
-      // if (formData.requireHeartbeat) {
-      //   policyData.requireHeartbeat = true
-      //   if (formData.heartbeatDuration) {
-      //     policyData.heartbeatDuration = parseInt(formData.heartbeatDuration)
-      //   }
-      //   policyData.heartbeatCullStrategy = formData.heartbeatCullStrategy
-      //   policyData.heartbeatResurrectionStrategy = formData.heartbeatResurrectionStrategy  
-      //   policyData.heartbeatBasis = formData.heartbeatBasis
-      // }
-
-      // Skip all strategy fields for now to test basic creation
-      // policyData.machineUniquenessStrategy = formData.machineUniquenessStrategy
-      // policyData.machineMatchingStrategy = formData.machineMatchingStrategy
-      // policyData.expirationStrategy = formData.expirationStrategy
-      // policyData.expirationBasis = formData.expirationBasis
-      // policyData.renewalBasis = formData.renewalBasis
-      // policyData.transferStrategy = formData.transferStrategy
-      // policyData.authenticationStrategy = formData.authenticationStrategy
-      // policyData.machineLeasingStrategy = formData.machineLeasingStrategy
-      // policyData.processLeasingStrategy = formData.processLeasingStrategy
-      // policyData.overageStrategy = formData.overageStrategy
-
-      // Skip metadata for now to keep it minimal like the working test
-      // if (formData.metadata) {
-      //   try {
-      //     policyData.metadata = JSON.parse(formData.metadata)
-      //   } catch {
-      //     policyData.metadata = { notes: formData.metadata }
-      //   }
-      // }
-
-      await api.policies.create(policyData as { name: string; productId: string; duration?: number })
+      await api.policies.create(policyData)
 
       toast.success('Policy created successfully')
       setOpen(false)
