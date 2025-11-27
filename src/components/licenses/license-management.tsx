@@ -85,7 +85,7 @@ export function LicenseManagement() {
       license.attributes.key?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       license.attributes.name?.toLowerCase().includes(searchTerm.toLowerCase())
     
-    const matchesStatus = statusFilter === 'all' || license.attributes.status === statusFilter
+    const matchesStatus = statusFilter === 'all' || license.attributes.status.toLowerCase() === statusFilter
     
     return matchesSearch && matchesStatus
   })
