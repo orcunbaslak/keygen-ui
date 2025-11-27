@@ -91,7 +91,7 @@ export function LicenseManagement() {
   })
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'active': return 'bg-green-100 text-green-800 border-green-200'
       case 'suspended': return 'bg-orange-100 text-orange-800 border-orange-200'
       case 'expired': return 'bg-red-100 text-red-800 border-red-200'
