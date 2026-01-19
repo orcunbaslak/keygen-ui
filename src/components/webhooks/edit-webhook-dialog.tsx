@@ -32,7 +32,7 @@ export function EditWebhookDialog({
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     url: '',
-    events: [] as string[],
+    subscriptions: [] as string[],
     enabled: true
   })
 
@@ -46,7 +46,7 @@ export function EditWebhookDialog({
     if (webhook) {
       setFormData({
         url: webhook.attributes.url,
-        events: [...webhook.attributes.events],
+        subscriptions: [...webhook.attributes.subscriptions],
         enabled: webhook.attributes.enabled
       })
     }
@@ -60,7 +60,7 @@ export function EditWebhookDialog({
       return
     }
 
-    if (formData.events.length === 0) {
+    if (formData.subscriptions.length === 0) {
       toast.error('At least one event must be selected')
       return
     }
@@ -78,7 +78,7 @@ export function EditWebhookDialog({
     try {
       await api.webhooks.update(webhook.id, {
         url: formData.url.trim(),
-        events: formData.events,
+        subscriptions: formData.subscriptions,
         enabled: formData.enabled
       })
       
@@ -96,8 +96,8 @@ export function EditWebhookDialog({
     setFormData(prev => ({
       ...prev,
       events: checked 
-        ? [...prev.events, event]
-        : prev.events.filter(e => e !== event)
+        ? [...prev.subscriptions, event]
+        : prev.subscriptions.filter(e => e !== event)
     }))
   }
 
@@ -105,17 +105,17 @@ export function EditWebhookDialog({
     setFormData(prev => ({
       ...prev,
       events: checked
-        ? [...new Set([...prev.events, ...groupEvents])]
-        : prev.events.filter(e => !groupEvents.includes(e))
+        ? [...new Set([...prev.subscriptions, ...groupEvents])]
+        : prev.subscriptions.filter(e => !groupEvents.includes(e))
     }))
   }
 
   const isGroupFullySelected = (groupEvents: string[]) => {
-    return groupEvents.every(event => formData.events.includes(event))
+    return groupEvents.every(event => formData.subscriptions.includes(event))
   }
 
   const isGroupPartiallySelected = (groupEvents: string[]) => {
-    return groupEvents.some(event => formData.events.includes(event)) && 
+    return groupEvents.some(event => formData.subscriptions.includes(event)) && 
            !isGroupFullySelected(groupEvents)
   }
 
@@ -170,7 +170,7 @@ export function EditWebhookDialog({
               <CardHeader>
                 <CardTitle>Event Subscriptions</CardTitle>
                 <CardDescription>
-                  Select which events should trigger this webhook ({formData.events.length} selected)
+                  Select which events should trigger this webhook ({formData.subscriptions.length} selected)
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -204,7 +204,7 @@ export function EditWebhookDialog({
                             <div key={event} className="flex items-center space-x-2">
                               <Checkbox
                                 id={event}
-                                checked={formData.events.includes(event)}
+                                checked={formData.subscriptions.includes(event)}
                                 onCheckedChange={(checked) => handleEventToggle(event, checked as boolean)}
                               />
                               <Label htmlFor={event} className="text-sm font-mono">
@@ -233,7 +233,7 @@ export function EditWebhookDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || formData.events.length === 0}>
+            <Button type="submit" disabled={loading || formData.subscriptions.length === 0}>
               {loading ? 'Updating...' : 'Update Webhook'}
             </Button>
           </DialogFooter>

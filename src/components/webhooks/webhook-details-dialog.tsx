@@ -93,7 +93,7 @@ export function WebhookDetailsDialog({
     return groups
   }
 
-  const eventGroups = groupEventsByResource(webhook.attributes.events)
+  const eventGroups = groupEventsByResource(webhook.attributes.subscriptions)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -193,7 +193,7 @@ export function WebhookDetailsDialog({
           {/* Event Subscriptions */}
           <Card>
             <CardHeader>
-              <CardTitle>Event Subscriptions ({webhook.attributes.events.length})</CardTitle>
+              <CardTitle>Event Subscriptions ({webhook.attributes.subscriptions.length})</CardTitle>
               <CardDescription>
                 Events that will trigger this webhook
               </CardDescription>
