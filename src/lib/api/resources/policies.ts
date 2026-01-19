@@ -41,7 +41,7 @@ export class PolicyResource {
     heartbeatDuration?: number;
     heartbeatCullStrategy?: 'DEACTIVATE_DEAD' | 'KEEP_DEAD';
     heartbeatResurrectionStrategy?: 'NO_REVIVE' | 'ALWAYS_REVIVE';
-    heartbeatBasis?: 'FROM_CREATION' | 'FROM_FIRST_VALIDATION';
+    heartbeatBasis?: 'FROM_CREATION' | 'FROM_FIRST_PING';
     machineUniquenessStrategy?: 'UNIQUE_PER_LICENSE' | 'UNIQUE_PER_ACCOUNT';
     machineMatchingStrategy?: 'MATCH_ANY' | 'MATCH_TWO' | 'MATCH_MOST' | 'MATCH_ALL';
     expirationStrategy?: 'RESTRICT_ACCESS' | 'REVOKE_ACCESS' | 'MAINTAIN_ACCESS';
@@ -89,7 +89,7 @@ export class PolicyResource {
     heartbeatDuration?: number;
     heartbeatCullStrategy?: 'DEACTIVATE_DEAD' | 'KEEP_DEAD';
     heartbeatResurrectionStrategy?: 'NO_REVIVE' | 'ALWAYS_REVIVE';
-    heartbeatBasis?: 'FROM_CREATION' | 'FROM_FIRST_VALIDATION';
+    heartbeatBasis?: 'FROM_CREATION' | 'FROM_FIRST_PING';
     machineUniquenessStrategy?: 'UNIQUE_PER_LICENSE' | 'UNIQUE_PER_ACCOUNT';
     machineMatchingStrategy?: 'MATCH_ANY' | 'MATCH_TWO' | 'MATCH_MOST' | 'MATCH_ALL';
     expirationStrategy?: 'RESTRICT_ACCESS' | 'REVOKE_ACCESS' | 'MAINTAIN_ACCESS';
