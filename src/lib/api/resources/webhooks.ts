@@ -57,8 +57,8 @@ export class WebhookResource {
     // Add filter parameters
     if (filters.enabled !== undefined) params.enabled = filters.enabled;
     if (filters.url) params.url = filters.url;
-    if (filters.events && filters.events.length > 0) {
-      params.events = filters.events.join(',');
+    if (filters.subscriptions && filters.subscriptions.length > 0) {
+      params.subscriptions = filters.subscriptions.join(',');
     }
 
     return this.client.request<Webhook[]>('webhook-endpoints', { params });
@@ -76,7 +76,7 @@ export class WebhookResource {
    */
   async create(webhookData: {
     url: string;
-    events: string[];
+    subscriptions: string[];
     enabled?: boolean;
   }): Promise<KeygenResponse<Webhook>> {
     const body = {
@@ -84,7 +84,7 @@ export class WebhookResource {
         type: 'webhook-endpoints',
         attributes: {
           url: webhookData.url.trim(),
-          events: webhookData.events,
+          subscriptions: webhookData.subscriptions,
           enabled: webhookData.enabled !== false, // Default to true
         },
       },
@@ -101,7 +101,7 @@ export class WebhookResource {
    */
   async update(id: string, updates: {
     url?: string;
-    events?: string[];
+    subscriptions?: string[];
     enabled?: boolean;
   }): Promise<KeygenResponse<Webhook>> {
     const body = {
@@ -110,7 +110,7 @@ export class WebhookResource {
         id,
         attributes: {
           ...(updates.url && { url: updates.url.trim() }),
-          ...(updates.events && { events: updates.events }),
+          ...(updates.subscriptions && { subscriptions: updates.subscriptions }),
           ...(updates.enabled !== undefined && { enabled: updates.enabled }),
         },
       },

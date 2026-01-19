@@ -253,7 +253,7 @@ export interface Webhook extends KeygenResource {
   type: 'webhook-endpoints';
   attributes: {
     url: string;
-    events: string[];
+    subscriptions: string[];
     signingKey?: string;
     enabled: boolean;
     created: string;
@@ -338,5 +338,5 @@ export interface RequestLogFilters extends PaginationOptions {
 export interface WebhookFilters extends PaginationOptions {
   enabled?: boolean;
   url?: string;
-  events?: string[];
+  subscriptions?: string[];
 }

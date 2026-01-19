@@ -73,16 +73,16 @@ export function DeleteWebhookDialog({
             </div>
 
             <div>
-              <span className="text-sm font-medium">Events ({webhook.attributes.events.length}):</span>
+              <span className="text-sm font-medium">Events ({webhook.attributes.subscriptions.length}):</span>
               <div className="flex flex-wrap gap-1 mt-1">
-                {webhook.attributes.events.slice(0, 5).map((event) => (
+                {webhook.attributes.subscriptions.slice(0, 5).map((event) => (
                   <Badge key={event} variant="outline" className="text-xs">
                     {event}
                   </Badge>
                 ))}
-                {webhook.attributes.events.length > 5 && (
+                {webhook.attributes.subscriptions.length > 5 && (
                   <Badge variant="secondary" className="text-xs">
-                    +{webhook.attributes.events.length - 5} more
+                    +{webhook.attributes.subscriptions.length - 5} more
                   </Badge>
                 )}
               </div>

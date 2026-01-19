@@ -120,7 +120,7 @@ export function WebhookManagement() {
 
   const filteredWebhooks = webhooks.filter(webhook => 
     webhook.attributes.url.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    webhook.attributes.events.some(event => event.toLowerCase().includes(searchTerm.toLowerCase()))
+    webhook.attributes.subscriptions.some(event => event.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   const formatDate = (dateString: string) => {
@@ -213,14 +213,14 @@ export function WebhookManagement() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
-                          {webhook.attributes.events.slice(0, 3).map((event) => (
+                          {webhook.attributes.subscriptions.slice(0, 3).map((event) => (
                             <Badge key={event} variant="outline" className="text-xs">
                               {event}
                             </Badge>
                           ))}
-                          {webhook.attributes.events.length > 3 && (
+                          {webhook.attributes.subscriptions.length > 3 && (
                             <Badge variant="secondary" className="text-xs">
-                              +{webhook.attributes.events.length - 3} more
+                              +{webhook.attributes.subscriptions.length - 3} more
                             </Badge>
                           )}
                         </div>
