@@ -100,58 +100,48 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
 
     try {
       setLoading(true)
-      
-      // Use EXACTLY the same minimal structure that worked in the test
+
+      // Build policy data with all user-selected options
       const policyData: Record<string, unknown> = {
         name: formData.name.trim(),
         productId: formData.productId
       }
 
-      // Only add duration if specified (like in the test)
+      // Add duration if specified
       if (formData.duration && formData.duration.trim()) {
         policyData.duration = parseInt(formData.duration)
       }
-      
-      // These might be problematic - let's test without them first
-      // if (formData.concurrent) {
-      //   policyData.concurrent = true
-      // }
-      
-      // if (formData.protected) {
-      //   policyData.protected = true
-      // }
-      
-      // Skip heartbeat for now to isolate the issue
-      // if (formData.requireHeartbeat) {
-      //   policyData.requireHeartbeat = true
-      //   if (formData.heartbeatDuration) {
-      //     policyData.heartbeatDuration = parseInt(formData.heartbeatDuration)
-      //   }
-      //   policyData.heartbeatCullStrategy = formData.heartbeatCullStrategy
-      //   policyData.heartbeatResurrectionStrategy = formData.heartbeatResurrectionStrategy  
-      //   policyData.heartbeatBasis = formData.heartbeatBasis
-      // }
 
-      // Skip all strategy fields for now to test basic creation
-      // policyData.machineUniquenessStrategy = formData.machineUniquenessStrategy
-      // policyData.machineMatchingStrategy = formData.machineMatchingStrategy
-      // policyData.expirationStrategy = formData.expirationStrategy
-      // policyData.expirationBasis = formData.expirationBasis
-      // policyData.renewalBasis = formData.renewalBasis
-      // policyData.transferStrategy = formData.transferStrategy
-      // policyData.authenticationStrategy = formData.authenticationStrategy
-      // policyData.machineLeasingStrategy = formData.machineLeasingStrategy
-      // policyData.processLeasingStrategy = formData.processLeasingStrategy
-      // policyData.overageStrategy = formData.overageStrategy
+      // Add boolean flags if enabled
+      if (formData.strict) policyData.strict = true
+      if (formData.floating) policyData.floating = true
+      if (formData.concurrent) policyData.concurrent = true
+      if (formData.protected) policyData.protected = true
 
-      // Skip metadata for now to keep it minimal like the working test
-      // if (formData.metadata) {
-      //   try {
-      //     policyData.metadata = JSON.parse(formData.metadata)
-      //   } catch {
-      //     policyData.metadata = { notes: formData.metadata }
-      //   }
-      // }
+      // Add heartbeat settings if heartbeat is required
+      if (formData.requireHeartbeat) {
+        policyData.requireHeartbeat = true
+        if (formData.heartbeatDuration) {
+          policyData.heartbeatDuration = parseInt(formData.heartbeatDuration)
+        }
+        policyData.heartbeatCullStrategy = formData.heartbeatCullStrategy
+        policyData.heartbeatResurrectionStrategy = formData.heartbeatResurrectionStrategy
+        policyData.heartbeatBasis = formData.heartbeatBasis
+      }
+
+      // Add strategy fields - these are the key fields users configure
+      policyData.authenticationStrategy = formData.authenticationStrategy
+      policyData.expirationStrategy = formData.expirationStrategy
+      policyData.overageStrategy = formData.overageStrategy
+
+      // Add metadata if provided
+      if (formData.metadata && formData.metadata.trim()) {
+        try {
+          policyData.metadata = JSON.parse(formData.metadata)
+        } catch {
+          policyData.metadata = { notes: formData.metadata }
+        }
+      }
 
       await api.policies.create(policyData as { name: string; productId: string; duration?: number })
 
