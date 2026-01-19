@@ -52,7 +52,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(response.data as User);
       }
     } catch (err: unknown) {
-      console.error('Auth check failed:', err);
+      // Log with JSON.stringify for plain objects that don't serialize well
+      console.error('Auth check failed:', typeof err === 'object' ? JSON.stringify(err, null, 2) : err);
       setError('Authentication failed');
       // Clear invalid token
       localStorage.removeItem('keygen_token');

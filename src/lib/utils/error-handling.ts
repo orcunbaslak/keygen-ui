@@ -180,11 +180,17 @@ export function handleFormError(
  * Handle authentication errors specifically
  */
 export function handleAuthError(error: unknown): void {
-  console.error('Authentication error:', error)
+  // Log error with full details (plain objects don't serialize well with console.error)
+  const errorMessage = getCombinedErrorMessage(error)
+  console.error('Authentication error:', errorMessage, error)
 
   if (isAuthError(error) || isUnauthorizedError(error)) {
-    toast.error('Authentication failed - please check your credentials')
-    // Could trigger logout/redirect here
+    // Extract specific error message if available
+    const detailedMessage = getCombinedErrorMessage(error)
+    const message = detailedMessage !== 'Unknown Error'
+      ? detailedMessage
+      : 'Authentication failed - please check your credentials'
+    toast.error(message)
     return
   }
 
@@ -193,7 +199,11 @@ export function handleAuthError(error: unknown): void {
     return
   }
 
-  toast.error('Login failed - please try again')
+  // For other errors, try to show the actual error message
+  const message = errorMessage !== 'Unknown Error'
+    ? errorMessage
+    : 'Login failed - please try again'
+  toast.error(message)
 }
 
 /**
