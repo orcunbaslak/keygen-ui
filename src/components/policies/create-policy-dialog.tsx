@@ -50,7 +50,7 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
     heartbeatDuration: '3600',
     heartbeatCullStrategy: 'DEACTIVATE_DEAD' as 'DEACTIVATE_DEAD' | 'KEEP_DEAD',
     heartbeatResurrectionStrategy: 'NO_REVIVE' as 'NO_REVIVE' | 'ALWAYS_REVIVE',
-    heartbeatBasis: 'FROM_CREATION' as 'FROM_CREATION' | 'FROM_FIRST_VALIDATION',
+    heartbeatBasis: 'FROM_CREATION' as 'FROM_CREATION' | 'FROM_FIRST_PING',
     machineUniquenessStrategy: 'UNIQUE_PER_LICENSE' as 'UNIQUE_PER_LICENSE' | 'UNIQUE_PER_ACCOUNT',
     machineMatchingStrategy: 'MATCH_ANY' as 'MATCH_ANY' | 'MATCH_TWO' | 'MATCH_MOST' | 'MATCH_ALL',
     expirationStrategy: 'RESTRICT_ACCESS' as 'RESTRICT_ACCESS' | 'REVOKE_ACCESS' | 'MAINTAIN_ACCESS',
@@ -337,14 +337,14 @@ export function CreatePolicyDialog({ onPolicyCreated }: CreatePolicyDialogProps)
                     <Label htmlFor="heartbeatBasis">Heartbeat Basis</Label>
                     <Select
                       value={formData.heartbeatBasis}
-                      onValueChange={(value: 'FROM_CREATION' | 'FROM_FIRST_VALIDATION') => setFormData({ ...formData, heartbeatBasis: value })}
+                      onValueChange={(value: 'FROM_CREATION' | 'FROM_FIRST_PING') => setFormData({ ...formData, heartbeatBasis: value })}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="FROM_CREATION">From Creation</SelectItem>
-                        <SelectItem value="FROM_FIRST_VALIDATION">From First Validation</SelectItem>
+                        <SelectItem value="FROM_FIRST_PING">From First Ping</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
