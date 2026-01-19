@@ -157,36 +157,77 @@ export function getErrorMessage(error: unknown): string {
   if (isKeygenApiError(error)) {
     return error.detail || error.message || 'API Error'
   }
-  
+
   if (isNetworkError(error)) {
     return error.message || 'Network Error'
   }
-  
+
   if (isAuthError(error)) {
     return error.message || 'Authentication Error'
   }
-  
+
   if (isValidationError(error)) {
     return error.message || 'Validation Error'
   }
-  
+
   if (isParseError(error)) {
     return error.message || 'Parse Error'
   }
-  
+
   if (isAppError(error)) {
     return error.message || 'Application Error'
   }
-  
+
   if (isJavaScriptError(error)) {
     return error.message || 'Unknown Error'
   }
-  
+
   if (typeof error === 'string') {
     return error
   }
-  
+
   return 'Unknown Error'
+}
+
+/**
+ * Extract detailed error messages from Keygen API error response
+ * Returns an array of user-friendly error messages
+ */
+export function getDetailedErrorMessages(error: unknown): string[] {
+  if (!isKeygenApiError(error) || !error.errors || error.errors.length === 0) {
+    return [getErrorMessage(error)]
+  }
+
+  return error.errors.map(err => {
+    // Extract the field name from the source pointer (e.g., "/data/attributes/duration" -> "duration")
+    let fieldName = ''
+    if (err.source?.pointer) {
+      const parts = err.source.pointer.split('/')
+      fieldName = parts[parts.length - 1]
+      // Convert camelCase to readable format
+      fieldName = fieldName.replace(/([A-Z])/g, ' $1').toLowerCase().trim()
+    }
+
+    // Build a user-friendly message
+    if (fieldName && err.detail) {
+      // Capitalize first letter of field name
+      const capitalizedField = fieldName.charAt(0).toUpperCase() + fieldName.slice(1)
+      return `${capitalizedField}: ${err.detail}`
+    }
+
+    return err.detail || err.title || 'Unknown error'
+  })
+}
+
+/**
+ * Get a single combined error message from detailed errors
+ */
+export function getCombinedErrorMessage(error: unknown): string {
+  const messages = getDetailedErrorMessages(error)
+  if (messages.length === 1) {
+    return messages[0]
+  }
+  return messages.join('. ')
 }
 
 /**
