@@ -15,7 +15,8 @@ import {
   isUnauthorizedError,
   getErrorMessage,
   getErrorStatus,
-  shouldShowToast
+  shouldShowToast,
+  getCombinedErrorMessage
 } from './error-guards'
 
 /**
@@ -46,7 +47,9 @@ export function handleCrudError(
   }
 
   if (isUnprocessableEntityError(error)) {
-    const message = options?.customMessage || `Invalid ${resourceType.toLowerCase()} data - please check your input`
+    // Extract detailed error message from API response
+    const detailedMessage = getCombinedErrorMessage(error)
+    const message = options?.customMessage || detailedMessage || `Invalid ${resourceType.toLowerCase()} data - please check your input`
     if (options?.onValidation) {
       options.onValidation(message)
     }
@@ -158,7 +161,9 @@ export function handleFormError(
   }
 
   if (isUnprocessableEntityError(error)) {
-    const message = 'Please check your input and try again'
+    // Extract detailed error message from API response
+    const detailedMessage = getCombinedErrorMessage(error)
+    const message = detailedMessage || 'Please check your input and try again'
     if (options?.onValidation) {
       options.onValidation(message)
     } else if (shouldShowToast(error)) {
