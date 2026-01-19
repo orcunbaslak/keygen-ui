@@ -38,17 +38,24 @@ export class UserResource {
     password?: string;
     metadata?: Record<string, unknown>;
   }): Promise<KeygenResponse<User>> {
+    // Build attributes object, only including defined values
+    const attributes: Record<string, unknown> = {
+      email: userData.email,
+    };
+
+    // Only add optional fields if they have values
+    if (userData.firstName) attributes.firstName = userData.firstName;
+    if (userData.lastName) attributes.lastName = userData.lastName;
+    if (userData.role) attributes.role = userData.role;
+    if (userData.password) attributes.password = userData.password;
+    if (userData.metadata && Object.keys(userData.metadata).length > 0) {
+      attributes.metadata = userData.metadata;
+    }
+
     const body = {
       data: {
         type: 'users',
-        attributes: {
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          email: userData.email,
-          role: userData.role || 'user',
-          password: userData.password,
-          metadata: userData.metadata || {},
-        },
+        attributes,
       },
     };
 
