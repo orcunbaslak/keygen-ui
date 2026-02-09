@@ -187,21 +187,35 @@ export class KeygenClient {
 
   /**
    * Build the full URL for an endpoint
+   * In the browser, routes through /api/keygen proxy to avoid CORS issues
    */
   private buildUrl(endpoint: string): string {
-    const baseUrl = `${this.config.apiUrl}/accounts/${this.config.accountId}`;
-    
-    // Handle both absolute and relative endpoints
+    const isBrowser = typeof window !== 'undefined'
+    const proxyBase = '/api/keygen'
+
     if (endpoint.startsWith('/')) {
       // Absolute endpoint (e.g., '/tokens', '/me')
       if (endpoint.startsWith('/v1') || endpoint === '/me') {
-        return `${this.config.apiUrl}${endpoint}`;
+        // e.g., '/me' → proxy: /api/keygen/me, direct: {apiUrl}/me
+        if (isBrowser) {
+          // Strip /v1 prefix if present since proxy already targets the API base
+          const path = endpoint.startsWith('/v1') ? endpoint.slice(3) : endpoint
+          return `${proxyBase}${path}`
+        }
+        return `${this.config.apiUrl}${endpoint}`
       }
-      return `${baseUrl}${endpoint}`;
+      // e.g., '/tokens' → proxy: /api/keygen/accounts/{id}/tokens
+      if (isBrowser) {
+        return `${proxyBase}/accounts/${this.config.accountId}${endpoint}`
+      }
+      return `${this.config.apiUrl}/accounts/${this.config.accountId}${endpoint}`
     }
-    
-    // Relative endpoint
-    return `${baseUrl}/${endpoint}`;
+
+    // Relative endpoint (e.g., 'licenses')
+    if (isBrowser) {
+      return `${proxyBase}/accounts/${this.config.accountId}/${endpoint}`
+    }
+    return `${this.config.apiUrl}/accounts/${this.config.accountId}/${endpoint}`
   }
 
   /**
