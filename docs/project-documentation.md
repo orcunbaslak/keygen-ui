@@ -121,10 +121,15 @@ Key references:
 - Loading & error states: always present on async flows
 - Notifications: Sonner for success/error toasts
 
+## API Proxy
+
+Browser requests are routed through a Next.js API proxy at `/api/keygen/[...path]` to avoid CORS issues when the app is accessed from other machines on the network. The proxy uses `node-fetch` with a custom HTTPS agent to handle self-signed certificates in development (`rejectUnauthorized: false`). In production, certificate validation is enforced.
+
 ## Security
 
 - Never embed admin/product/environment tokens in client code
 - Use HTTPS and secure CORS in production
+- The API proxy validates SSL certificates in production but relaxes this for development self-signed certs
 - Validate inputs client-side and server-side (where applicable)
 - Handle auth failures and token expiry gracefully
 
