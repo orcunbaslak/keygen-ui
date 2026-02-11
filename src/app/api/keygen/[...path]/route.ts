@@ -1,36 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
+import https from 'https'
+import nodeFetch from 'node-fetch'
 
 const KEYGEN_API_URL = process.env.NEXT_PUBLIC_KEYGEN_API_URL || 'https://api.keygen.sh/v1'
 
-async function proxyRequest(
-  request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
-) {
-  const { path } = await params
-  const targetPath = path.join('/')
-  const targetUrl = new URL(`${KEYGEN_API_URL}/${targetPath}`)
+// Extract base URL without /v1 suffix
+const BASE_URL = KEYGEN_API_URL.replace(/\/v1\/?$/, '')
 
-  // Preserve query parameters
-  request.nextUrl.searchParams.forEach((value, key) => {
-    targetUrl.searchParams.append(key, value)
-  })
+// Create an HTTPS agent that ignores self-signed certificate errors in development
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: process.env.NODE_ENV === 'production',
+})
 
-  // Build headers to forward
-  const headers: Record<string, string> = {}
+async function proxyRequest(request: NextRequest, path: string[]) {
+  const targetUrl = `${BASE_URL}/v1/${path.join('/')}${request.nextUrl.search}`
 
+  const headers: Record<string, string> = {
+    'Content-Type': request.headers.get('content-type') || 'application/vnd.api+json',
+    'Accept': request.headers.get('accept') || 'application/vnd.api+json',
+  }
+
+  // Forward auth header
   const authorization = request.headers.get('authorization')
   if (authorization) {
     headers['Authorization'] = authorization
-  }
-
-  const contentType = request.headers.get('content-type')
-  if (contentType) {
-    headers['Content-Type'] = contentType
-  }
-
-  const accept = request.headers.get('accept')
-  if (accept) {
-    headers['Accept'] = accept
   }
 
   // Read request body for non-GET/HEAD methods
@@ -43,63 +36,67 @@ async function proxyRequest(
     }
   }
 
-  const response = await fetch(targetUrl.toString(), {
-    method: request.method,
-    headers,
-    body: body || undefined,
-  })
+  try {
+    const response = await nodeFetch(targetUrl, {
+      method: request.method,
+      headers,
+      body: body || undefined,
+      agent: targetUrl.startsWith('https') ? httpsAgent : undefined,
+    })
 
-  // Handle empty responses (e.g., DELETE 204)
-  if (response.status === 204 || response.headers.get('content-length') === '0') {
-    return new NextResponse(null, {
+    const data = await response.text()
+
+    return new NextResponse(data || null, {
       status: response.status,
       headers: {
-        'Content-Type': 'application/vnd.api+json',
+        'Content-Type': response.headers.get('content-type') || 'application/vnd.api+json',
       },
     })
+  } catch (error) {
+    console.error('Proxy error:', error)
+    return NextResponse.json(
+      { errors: [{ title: 'Proxy Error', detail: String(error) }] },
+      { status: 502 }
+    )
   }
-
-  const responseBody = await response.text()
-
-  return new NextResponse(responseBody, {
-    status: response.status,
-    headers: {
-      'Content-Type': response.headers.get('content-type') || 'application/vnd.api+json',
-    },
-  })
 }
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  return proxyRequest(request, context)
+  const { path } = await params
+  return proxyRequest(request, path)
 }
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  return proxyRequest(request, context)
+  const { path } = await params
+  return proxyRequest(request, path)
 }
 
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  return proxyRequest(request, context)
+  const { path } = await params
+  return proxyRequest(request, path)
 }
 
 export async function PATCH(
   request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  return proxyRequest(request, context)
+  const { path } = await params
+  return proxyRequest(request, path)
 }
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  return proxyRequest(request, context)
+  const { path } = await params
+  return proxyRequest(request, path)
 }
