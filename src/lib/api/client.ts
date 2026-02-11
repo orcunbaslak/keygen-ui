@@ -20,6 +20,7 @@ export interface KeygenClientConfig {
   apiUrl: string;
   accountId: string;
   token?: string;
+  singleplayer?: boolean;
 }
 
 export class KeygenClient {
@@ -188,10 +189,14 @@ export class KeygenClient {
   /**
    * Build the full URL for an endpoint
    * In the browser, routes through /api/keygen proxy to avoid CORS issues
+   * In singleplayer CE mode, omits the accounts/{accountId} path segment
    */
   private buildUrl(endpoint: string): string {
     const isBrowser = typeof window !== 'undefined'
     const proxyBase = '/api/keygen'
+    const accountPrefix = this.config.singleplayer
+      ? ''
+      : `/accounts/${this.config.accountId}`
 
     if (endpoint.startsWith('/')) {
       // Absolute endpoint (e.g., '/tokens', '/me')
@@ -206,16 +211,20 @@ export class KeygenClient {
       }
       // e.g., '/tokens' → proxy: /api/keygen/accounts/{id}/tokens
       if (isBrowser) {
-        return `${proxyBase}/accounts/${this.config.accountId}${endpoint}`
+        return `${proxyBase}${accountPrefix}${endpoint}`
       }
-      return `${this.config.apiUrl}/accounts/${this.config.accountId}${endpoint}`
+      return `${this.config.apiUrl}${accountPrefix}${endpoint}`
     }
 
     // Relative endpoint (e.g., 'licenses')
     if (isBrowser) {
-      return `${proxyBase}/accounts/${this.config.accountId}/${endpoint}`
+      return accountPrefix
+        ? `${proxyBase}${accountPrefix}/${endpoint}`
+        : `${proxyBase}/${endpoint}`
     }
-    return `${this.config.apiUrl}/accounts/${this.config.accountId}/${endpoint}`
+    return accountPrefix
+      ? `${this.config.apiUrl}${accountPrefix}/${endpoint}`
+      : `${this.config.apiUrl}/${endpoint}`
   }
 
   /**
@@ -286,14 +295,20 @@ export function getKeygenClient(): KeygenClient {
   if (!clientInstance) {
     const apiUrl = process.env.NEXT_PUBLIC_KEYGEN_API_URL;
     const accountId = process.env.NEXT_PUBLIC_KEYGEN_ACCOUNT_ID;
+    const singleplayer = process.env.NEXT_PUBLIC_KEYGEN_SINGLEPLAYER === 'true';
 
-    if (!apiUrl || !accountId) {
-      throw new Error('Missing required environment variables: NEXT_PUBLIC_KEYGEN_API_URL and NEXT_PUBLIC_KEYGEN_ACCOUNT_ID');
+    if (!apiUrl) {
+      throw new Error('Missing required environment variable: NEXT_PUBLIC_KEYGEN_API_URL');
+    }
+
+    if (!singleplayer && !accountId) {
+      throw new Error('Missing required environment variable: NEXT_PUBLIC_KEYGEN_ACCOUNT_ID (set NEXT_PUBLIC_KEYGEN_SINGLEPLAYER=true for singleplayer CE mode)');
     }
 
     clientInstance = new KeygenClient({
       apiUrl,
-      accountId,
+      accountId: accountId || '',
+      singleplayer,
     });
   }
 
