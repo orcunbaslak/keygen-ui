@@ -62,6 +62,9 @@ KEYGEN_API_URL=<https://api.keygen.sh/v1 or your instance>
 KEYGEN_ACCOUNT_ID=<account-id>
 KEYGEN_ADMIN_EMAIL=<email>
 KEYGEN_ADMIN_PASSWORD=<password>
+
+# Optional: for Keygen CE singleplayer mode (omits accounts/{id} from API paths)
+# NEXT_PUBLIC_KEYGEN_SINGLEPLAYER=true
 ```
 
 Commands:

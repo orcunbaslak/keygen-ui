@@ -162,6 +162,9 @@ KEYGEN_API_URL=https://lms.pvx.ai/v1
 KEYGEN_ACCOUNT_ID=aca05a24-461a-4db5-8ed1-c12b6040d1c6
 KEYGEN_ADMIN_EMAIL=orcun@pvx.ai
 KEYGEN_ADMIN_PASSWORD=[configured]
+
+# Optional: for Keygen CE singleplayer mode (omits accounts/{id} from API paths)
+# NEXT_PUBLIC_KEYGEN_SINGLEPLAYER=true
 ```
 
 ## Implemented Features
