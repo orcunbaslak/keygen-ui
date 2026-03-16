@@ -1,5 +1,10 @@
+import { ProtectedRoute } from "@/components/auth/protected-route"
 import { GroupManagement } from '@/components/groups/group-management'
 
 export default function GroupsPage() {
-  return <GroupManagement />
+  return (
+    <ProtectedRoute>
+      <GroupManagement />
+    </ProtectedRoute>
+  )
 }

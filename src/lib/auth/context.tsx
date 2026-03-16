@@ -20,6 +20,28 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+async function storeTokenInCookie(token: string): Promise<void> {
+  await fetch('/api/auth/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+}
+
+async function clearTokenCookie(): Promise<void> {
+  await fetch('/api/auth/token', { method: 'DELETE' });
+}
+
+async function hasStoredToken(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/auth/token');
+    const data = await res.json();
+    return !!data.hasToken;
+  } catch {
+    return false;
+  }
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,30 +57,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setLoading(true);
       setError(null);
 
-      // Try to get token from localStorage or cookies
-      const token = localStorage.getItem('keygen_token');
-      if (!token) {
+      // Check if we have a token stored in the httpOnly cookie
+      const tokenExists = await hasStoredToken();
+      if (!tokenExists) {
         setLoading(false);
         return;
       }
 
-      // Get API client and set token
-      const api = getKeygenApi();
-      api.setToken(token);
+      // Verify token by calling the server-side /me proxy
+      const meResponse = await fetch('/api/auth/me');
+      if (!meResponse.ok) {
+        // Token is invalid or expired — clear it
+        await clearTokenCookie();
+        setLoading(false);
+        return;
+      }
 
-      // Verify token by getting current user
-      const response = await api.me();
-      if (response.data) {
-        setUser(response.data as User);
+      const data = await meResponse.json();
+      if (data.data) {
+        setUser(data.data as User);
       }
     } catch (err: unknown) {
-      // Log with JSON.stringify for plain objects that don't serialize well
-      console.error('Auth check failed:', typeof err === 'object' ? JSON.stringify(err, null, 2) : err);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Auth check failed:', err instanceof Error ? err.message : 'Unknown error');
+      }
       setError('Authentication failed');
-      // Clear invalid token
-      localStorage.removeItem('keygen_token');
-      const api = getKeygenApi();
-      api.setToken('');
+      await clearTokenCookie();
     } finally {
       setLoading(false);
     }
@@ -69,12 +93,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setLoading(true);
       setError(null);
 
-      // Get API client and authenticate with Keygen API
+      // Authenticate via the API client to get a token
       const api = getKeygenApi();
       const token = await api.authenticate(email, password, 'Keygen UI Session');
 
-      // Store token
-      localStorage.setItem('keygen_token', token);
+      // Store token in httpOnly cookie (secure, not accessible to JS)
+      await storeTokenInCookie(token);
+
+      // Also set it on the client for the current session's API calls
+      api.setToken(token);
 
       // Get user info
       const response = await api.me();
@@ -90,10 +117,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
     setError(null);
-    localStorage.removeItem('keygen_token');
+    await clearTokenCookie();
     const api = getKeygenApi();
     api.setToken('');
   };

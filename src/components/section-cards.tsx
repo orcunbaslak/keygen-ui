@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { Key, Users, Monitor, Package } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -25,31 +25,38 @@ export function SectionCards() {
 
   const api = getKeygenApi()
 
-  const loadDashboardStats = useCallback(async () => {
-    try {
-      const [licensesResponse, usersResponse, machinesResponse, productsResponse] = await Promise.all([
-        api.licenses.list({ limit: 1 }).catch(() => ({ data: [], meta: { count: 0 } })),
-        api.users.list({ limit: 1 }).catch(() => ({ data: [], meta: { count: 0 } })),
-        api.machines.list({ limit: 1 }).catch(() => ({ data: [], meta: { count: 0 } })),
-        api.products.list({ limit: 1 }).catch(() => ({ data: [], meta: { count: 0 } })),
-      ])
-
-      setStats({
-        licenses: (typeof licensesResponse.meta?.count === 'number' ? licensesResponse.meta.count : 0) || (Array.isArray(licensesResponse.data) ? licensesResponse.data.length : 0),
-        users: (typeof usersResponse.meta?.count === 'number' ? usersResponse.meta.count : 0) || (Array.isArray(usersResponse.data) ? usersResponse.data.length : 0),
-        machines: (typeof machinesResponse.meta?.count === 'number' ? machinesResponse.meta.count : 0) || (Array.isArray(machinesResponse.data) ? machinesResponse.data.length : 0),
-        products: (typeof productsResponse.meta?.count === 'number' ? productsResponse.meta.count : 0) || (Array.isArray(productsResponse.data) ? productsResponse.data.length : 0),
-        loading: false
-      })
-    } catch (error) {
-      console.error('Failed to load dashboard stats:', error)
-      setStats(prev => ({ ...prev, loading: false }))
-    }
-  }, [api.licenses, api.users, api.machines, api.products])
-
   useEffect(() => {
+    let cancelled = false
+
+    async function loadDashboardStats() {
+      try {
+        const [licensesResponse, usersResponse, machinesResponse, productsResponse] = await Promise.all([
+          api.licenses.list({ limit: 1 }).catch(() => ({ data: [], meta: { count: 0 } })),
+          api.users.list({ limit: 1 }).catch(() => ({ data: [], meta: { count: 0 } })),
+          api.machines.list({ limit: 1 }).catch(() => ({ data: [], meta: { count: 0 } })),
+          api.products.list({ limit: 1 }).catch(() => ({ data: [], meta: { count: 0 } })),
+        ])
+
+        if (cancelled) return
+
+        setStats({
+          licenses: (typeof licensesResponse.meta?.count === 'number' ? licensesResponse.meta.count : 0) || (Array.isArray(licensesResponse.data) ? licensesResponse.data.length : 0),
+          users: (typeof usersResponse.meta?.count === 'number' ? usersResponse.meta.count : 0) || (Array.isArray(usersResponse.data) ? usersResponse.data.length : 0),
+          machines: (typeof machinesResponse.meta?.count === 'number' ? machinesResponse.meta.count : 0) || (Array.isArray(machinesResponse.data) ? machinesResponse.data.length : 0),
+          products: (typeof productsResponse.meta?.count === 'number' ? productsResponse.meta.count : 0) || (Array.isArray(productsResponse.data) ? productsResponse.data.length : 0),
+          loading: false
+        })
+      } catch (error) {
+        if (cancelled) return
+        console.error('Failed to load dashboard stats:', error)
+        setStats(prev => ({ ...prev, loading: false }))
+      }
+    }
+
     loadDashboardStats()
-  }, [loadDashboardStats])
+
+    return () => { cancelled = true }
+  }, [api.licenses, api.users, api.machines, api.products])
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
       <Card className="@container/card">

@@ -35,10 +35,8 @@ export function LoginForm({
     try {
       await login(email, password)
       router.push("/dashboard")
-    } catch (err) {
+    } catch {
       // Error is handled by auth context
-      // Log with JSON.stringify for plain objects that don't serialize well
-      console.error("Login error:", typeof err === 'object' ? JSON.stringify(err, null, 2) : err)
     }
   }
 

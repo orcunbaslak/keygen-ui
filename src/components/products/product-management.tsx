@@ -118,7 +118,15 @@ export function ProductManagement() {
   }
 
   const openUrl = (url: string) => {
-    window.open(url, '_blank', 'noopener,noreferrer')
+    try {
+      const parsed = new URL(url)
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+        return
+      }
+      window.open(url, '_blank', 'noopener,noreferrer')
+    } catch {
+      // Invalid URL, do nothing
+    }
   }
 
   const handleEditProduct = (product: Product) => {

@@ -9,10 +9,6 @@ import { EntitlementResource } from './resources/entitlements';
 import { RequestLogResource } from './resources/request-logs';
 import { WebhookResource } from './resources/webhooks';
 
-// Additional resource imports (to be created)
-// import { ProcessResource } from './resources/processes';
-// import { ComponentResource } from './resources/components';
-
 export class KeygenApi {
   public licenses: LicenseResource;
   public machines: MachineResource;
@@ -23,10 +19,6 @@ export class KeygenApi {
   public entitlements: EntitlementResource;
   public requestLogs: RequestLogResource;
   public webhooks: WebhookResource;
-  
-  // Additional resources (to be uncommented when created)
-  // public processes: ProcessResource;
-  // public components: ComponentResource;
 
   constructor(private client: KeygenClient) {
     this.licenses = new LicenseResource(client);
@@ -38,10 +30,6 @@ export class KeygenApi {
     this.entitlements = new EntitlementResource(client);
     this.requestLogs = new RequestLogResource(client);
     this.webhooks = new WebhookResource(client);
-    
-    // Initialize additional resources
-    // this.processes = new ProcessResource(client);
-    // this.components = new ComponentResource(client);
   }
 
   /**
@@ -88,18 +76,6 @@ export function getKeygenApi(): KeygenApi {
     const client = getKeygenClient();
     apiInstance = new KeygenApi(client);
   }
-  
-  // Always check for the latest token from localStorage (client-side only)
-  if (typeof window !== 'undefined') {
-    const storedToken = localStorage.getItem('keygen_token');
-    const currentToken = apiInstance.getToken();
-    
-    // Update token if it changed
-    if (storedToken !== currentToken) {
-      apiInstance.setToken(storedToken || '');
-    }
-  }
-  
   return apiInstance;
 }
 

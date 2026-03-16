@@ -59,7 +59,12 @@ export function CreateProductDialog({ onProductCreated }: CreateProductDialogPro
       let metadata: Record<string, unknown> | undefined
       if (formData.metadata.trim()) {
         try {
-          metadata = JSON.parse(formData.metadata)
+          const parsed = JSON.parse(formData.metadata)
+          if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+            toast.error('Metadata must be a JSON object')
+            return
+          }
+          metadata = parsed
         } catch {
           toast.error('Invalid JSON format in metadata')
           return
