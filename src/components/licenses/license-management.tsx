@@ -110,16 +110,30 @@ export function LicenseManagement() {
   }, [])
 
   // Build search query from the search term.
-  // Searches name, key, id, and user (email) fields using OR logic.
+  // Uses OR logic so any matching field returns results.
   const buildSearchQuery = useCallback((term: string) => {
     const query: Record<string, string> = {}
-    // Keygen search requires minimum 3 chars for most fields
-    if (term.length >= 3) {
-      query.name = term
-      query.key = term
+    if (term.length < 3) return query
+
+    // Always search by name (ILIKE substring match)
+    query.name = term
+
+    // If it looks like a UUID, search by id
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-/i
+    if (uuidPattern.test(term)) {
       query.id = term
+    }
+
+    // If it contains hyphens and uppercase (license key pattern), search by key
+    if (term.includes('-') && /[A-F0-9]{4,}/.test(term)) {
+      query.key = term
+    }
+
+    // If it looks like an email, search by user
+    if (term.includes('@')) {
       query.user = term
     }
+
     return query
   }, [])
 
