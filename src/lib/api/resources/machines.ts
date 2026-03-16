@@ -16,6 +16,8 @@ export class MachineResource {
     if (filters.license) params.license = filters.license;
     if (filters.user) params.user = filters.user;
     if (filters.group) params.group = filters.group;
+    if (filters.product) params.product = filters.product;
+    if (filters.policy) params.policy = filters.policy;
     if (filters.fingerprint) params.fingerprint = filters.fingerprint;
     if (filters.ip) params.ip = filters.ip;
 
@@ -149,8 +151,8 @@ export class MachineResource {
       data: { type: 'users', id: userId },
     };
 
-    return this.client.request<Machine>(`machines/${id}/relationships/user`, {
-      method: 'PATCH',
+    return this.client.request<Machine>(`machines/${id}/owner`, {
+      method: 'PUT',
       body,
     });
   }
@@ -163,8 +165,8 @@ export class MachineResource {
       data: { type: 'groups', id: groupId },
     };
 
-    return this.client.request<Machine>(`machines/${id}/relationships/group`, {
-      method: 'PATCH',
+    return this.client.request<Machine>(`machines/${id}/group`, {
+      method: 'PUT',
       body,
     });
   }

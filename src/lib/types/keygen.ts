@@ -232,6 +232,17 @@ export interface Component extends KeygenResource {
   };
 }
 
+// Event Log
+export interface EventLog extends KeygenResource {
+  type: 'event-logs';
+  attributes: {
+    event: string;
+    metadata?: Record<string, unknown>;
+    created: string;
+    updated: string;
+  };
+}
+
 // Request Log
 export interface RequestLog extends KeygenResource {
   type: 'request-logs';
@@ -304,12 +315,18 @@ export interface LicenseFilters extends PaginationOptions {
   group?: string;
   product?: string;
   status?: License['attributes']['status'];
+  key?: string;
+  encrypted?: boolean;
+  suspended?: boolean;
+  metadata?: Record<string, string>;
 }
 
 export interface MachineFilters extends PaginationOptions {
   license?: string;
   user?: string;
   group?: string;
+  product?: string;
+  policy?: string;
   fingerprint?: string;
   ip?: string;
 }
@@ -318,6 +335,14 @@ export interface UserFilters extends PaginationOptions {
   email?: string;
   role?: User['attributes']['role'];
   status?: User['attributes']['status'];
+}
+
+export interface EventLogFilters extends PaginationOptions {
+  event?: string;
+  date?: {
+    start?: string;
+    end?: string;
+  };
 }
 
 export interface RequestLogFilters extends PaginationOptions {

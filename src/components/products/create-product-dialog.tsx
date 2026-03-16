@@ -38,6 +38,7 @@ export function CreateProductDialog({ onProductCreated }: CreateProductDialogPro
   const [platformInput, setPlatformInput] = useState('')
   const [formData, setFormData] = useState({
     name: '',
+    code: '',
     url: '',
     distributionStrategy: 'LICENSED' as 'LICENSED' | 'OPEN' | 'CLOSED',
     metadata: ''
@@ -73,6 +74,7 @@ export function CreateProductDialog({ onProductCreated }: CreateProductDialogPro
 
       await api.products.create({
         name: formData.name,
+        code: formData.code || undefined,
         url: formData.url || undefined,
         distributionStrategy: formData.distributionStrategy,
         platforms: platforms.length > 0 ? platforms : undefined,
@@ -93,6 +95,7 @@ export function CreateProductDialog({ onProductCreated }: CreateProductDialogPro
   const resetForm = () => {
     setFormData({
       name: '',
+      code: '',
       url: '',
       distributionStrategy: 'LICENSED',
       metadata: ''
@@ -157,6 +160,20 @@ export function CreateProductDialog({ onProductCreated }: CreateProductDialogPro
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="code">Code</Label>
+              <Input
+                id="code"
+                placeholder="my-awesome-product"
+                value={formData.code}
+                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Unique identifier for the product
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
               <Label htmlFor="strategy">Distribution Strategy</Label>
               <Select
                 value={formData.distributionStrategy}
@@ -187,7 +204,6 @@ export function CreateProductDialog({ onProductCreated }: CreateProductDialogPro
                   </SelectItem>
                 </SelectContent>
               </Select>
-            </div>
           </div>
 
           <div className="space-y-2">

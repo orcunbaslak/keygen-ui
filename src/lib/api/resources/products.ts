@@ -31,6 +31,7 @@ export class ProductResource {
    */
   async create(data: {
     name: string;
+    code?: string;
     url?: string;
     distributionStrategy?: 'LICENSED' | 'OPEN' | 'CLOSED';
     platforms?: string[];
@@ -52,6 +53,7 @@ export class ProductResource {
    */
   async update(productId: string, data: {
     name?: string;
+    code?: string;
     url?: string;
     distributionStrategy?: 'LICENSED' | 'OPEN' | 'CLOSED';
     platforms?: string[];

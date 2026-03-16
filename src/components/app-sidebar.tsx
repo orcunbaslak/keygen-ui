@@ -9,8 +9,6 @@ import {
   IconShield,
   IconChartBar,
   IconSettings,
-  IconHelp,
-  IconReportAnalytics,
   IconUsersGroup,
   IconShieldCheck,
   IconWebhook,
@@ -79,19 +77,9 @@ const data = {
   ],
   navSecondary: [
     {
-      title: "Analytics",
-      url: "/analytics",
-      icon: IconReportAnalytics,
-    },
-    {
       title: "Settings",
       url: "/settings",
       icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
     },
   ],
 }

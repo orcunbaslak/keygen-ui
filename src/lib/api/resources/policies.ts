@@ -122,4 +122,45 @@ export class PolicyResource {
       method: 'DELETE'
     });
   }
+
+  /**
+   * List entitlements attached to a policy
+   */
+  async getEntitlements(policyId: string): Promise<KeygenResponse<unknown[]>> {
+    return this.client.request(`/policies/${policyId}/entitlements`);
+  }
+
+  /**
+   * Attach entitlements to a policy
+   */
+  async attachEntitlements(policyId: string, entitlementIds: string[]): Promise<KeygenResponse<unknown>> {
+    const body = {
+      data: entitlementIds.map(id => ({
+        type: 'entitlements',
+        id,
+      })),
+    };
+
+    return this.client.request(`/policies/${policyId}/entitlements`, {
+      method: 'POST',
+      body,
+    });
+  }
+
+  /**
+   * Detach entitlements from a policy
+   */
+  async detachEntitlements(policyId: string, entitlementIds: string[]): Promise<void> {
+    const body = {
+      data: entitlementIds.map(id => ({
+        type: 'entitlements',
+        id,
+      })),
+    };
+
+    await this.client.request(`/policies/${policyId}/entitlements`, {
+      method: 'DELETE',
+      body,
+    });
+  }
 }

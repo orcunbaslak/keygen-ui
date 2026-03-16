@@ -33,6 +33,8 @@ const ALLOWED_PATH_SEGMENTS = new Set([
   'tokens',
   'me',
   'request-logs',
+  'event-logs',
+  'passwords',
   'releases',
   'artifacts',
   'platforms',
@@ -41,7 +43,6 @@ const ALLOWED_PATH_SEGMENTS = new Set([
   'processes',
   'components',
   'metrics',
-  'analytics',
   'actions',
   'second-factors',
 ])

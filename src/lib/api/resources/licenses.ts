@@ -18,6 +18,14 @@ export class LicenseResource {
     if (filters.group) params.group = filters.group;
     if (filters.product) params.product = filters.product;
     if (filters.status) params.status = filters.status;
+    if (filters.key) params.key = filters.key;
+    if (filters.encrypted !== undefined) params.encrypted = filters.encrypted;
+    if (filters.suspended !== undefined) params.suspended = filters.suspended;
+    if (filters.metadata) {
+      for (const [key, value] of Object.entries(filters.metadata)) {
+        params[`metadata[${key}]`] = value;
+      }
+    }
 
     return this.client.request<License[]>('licenses', { params });
   }
@@ -273,8 +281,8 @@ export class LicenseResource {
       data: { type: 'policies', id: policyId },
     };
 
-    return this.client.request<License>(`licenses/${id}/relationships/policy`, {
-      method: 'PATCH',
+    return this.client.request<License>(`licenses/${id}/policy`, {
+      method: 'PUT',
       body,
     });
   }
@@ -287,8 +295,8 @@ export class LicenseResource {
       data: { type: 'users', id: userId },
     };
 
-    return this.client.request<License>(`licenses/${id}/relationships/user`, {
-      method: 'PATCH',
+    return this.client.request<License>(`licenses/${id}/user`, {
+      method: 'PUT',
       body,
     });
   }
@@ -301,8 +309,8 @@ export class LicenseResource {
       data: { type: 'groups', id: groupId },
     };
 
-    return this.client.request<License>(`licenses/${id}/relationships/group`, {
-      method: 'PATCH',
+    return this.client.request<License>(`licenses/${id}/group`, {
+      method: 'PUT',
       body,
     });
   }
