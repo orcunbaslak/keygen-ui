@@ -14,6 +14,7 @@ WORKDIR /app
 
 RUN corepack enable pnpm
 RUN addgroup --system --gid 1001 buildgroup && adduser --system --uid 1001 builduser
+RUN chown builduser:buildgroup /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --chown=builduser:buildgroup . .
