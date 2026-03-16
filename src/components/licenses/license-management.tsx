@@ -86,9 +86,7 @@ export function LicenseManagement() {
   const [totalCount, setTotalCount] = useState(0)
 
   // Search state
-  const [allLicenses, setAllLicenses] = useState<License[]>([])
   const [isSearchMode, setIsSearchMode] = useState(false)
-  const [searchLoading, setSearchLoading] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const debouncedSearch = useDebounce(searchTerm, SEARCH_DEBOUNCE_MS)
 
@@ -111,106 +109,76 @@ export function LicenseManagement() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  // Load paginated licenses (normal browsing mode)
-  const loadLicenses = useCallback(async () => {
+  // Build search query from the search term.
+  // Searches name, key, id, and user (email) fields using OR logic.
+  const buildSearchQuery = useCallback((term: string) => {
+    const query: Record<string, string> = {}
+    // Keygen search requires minimum 3 chars for most fields
+    if (term.length >= 3) {
+      query.name = term
+      query.key = term
+      query.id = term
+      query.user = term
+    }
+    return query
+  }, [])
+
+  // Unified data loader: handles both search and browse modes
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await api.licenses.list({
-        page: { size: pageSize, number: currentPage },
-        ...(statusFilter !== 'all' && { status: statusFilter as License['attributes']['status'] })
-      })
-      setLicenses(response.data || [])
-      setTotalCount(response.meta?.count ?? (response.data?.length || 0))
+      const searchQuery = debouncedSearch ? buildSearchQuery(debouncedSearch) : null
+      const hasValidSearch = searchQuery && Object.keys(searchQuery).length > 0
+
+      if (hasValidSearch) {
+        // Server-side search via POST /search with pagination
+        setIsSearchMode(true)
+        const response = await api.search.search<License>({
+          type: 'licenses',
+          query: searchQuery,
+          op: 'OR',
+          page: { size: pageSize, number: currentPage },
+        })
+        setLicenses(response.data || [])
+        setTotalCount(response.meta?.count ?? (response.data?.length || 0))
+      } else {
+        // Normal paginated browsing
+        setIsSearchMode(false)
+        const response = await api.licenses.list({
+          page: { size: pageSize, number: currentPage },
+          ...(statusFilter !== 'all' && { status: statusFilter as License['attributes']['status'] })
+        })
+        setLicenses(response.data || [])
+        setTotalCount(response.meta?.count ?? (response.data?.length || 0))
+      }
     } catch (error: unknown) {
       handleLoadError(error, 'licenses')
     } finally {
       setLoading(false)
     }
-  }, [api.licenses, pageSize, currentPage, statusFilter])
+  }, [api.licenses, api.search, pageSize, currentPage, statusFilter, debouncedSearch, buildSearchQuery])
 
-  // Load ALL licenses for search mode
-  const loadAllLicenses = useCallback(async () => {
-    try {
-      setSearchLoading(true)
-      const response = await api.licenses.list({
-        limit: 250,
-        ...(statusFilter !== 'all' && { status: statusFilter as License['attributes']['status'] })
-      })
-      setAllLicenses(response.data || [])
-    } catch (error: unknown) {
-      handleLoadError(error, 'licenses')
-    } finally {
-      setSearchLoading(false)
-    }
-  }, [api.licenses, statusFilter])
-
-  // Switch between search and paginated mode
+  // Load data whenever dependencies change
   useEffect(() => {
-    if (debouncedSearch.length > 0) {
-      if (!isSearchMode) {
-        setIsSearchMode(true)
-        loadAllLicenses()
-      }
-    } else {
-      if (isSearchMode) {
-        setIsSearchMode(false)
-        setAllLicenses([])
-      }
-    }
-  }, [debouncedSearch, isSearchMode, loadAllLicenses])
+    loadData()
+  }, [loadData])
 
-  // Load paginated data when not searching
-  useEffect(() => {
-    if (!isSearchMode) {
-      loadLicenses()
-    }
-  }, [loadLicenses, isSearchMode])
-
-  // Reset to page 1 when filters change
+  // Reset to page 1 when filters or search change
   useEffect(() => {
     setCurrentPage(1)
-  }, [statusFilter, pageSize])
-
-  // Reload search results when status filter changes during search
-  useEffect(() => {
-    if (isSearchMode) {
-      loadAllLicenses()
-    }
-  }, [statusFilter]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Filtered results for search mode
-  const searchResults = allLicenses.filter(license => {
-    const term = debouncedSearch.toLowerCase()
-    return (
-      license.attributes.key?.toLowerCase().includes(term) ||
-      license.attributes.name?.toLowerCase().includes(term) ||
-      license.id.toLowerCase().includes(term)
-    )
-  })
-
-  // Paginate search results client-side
-  const searchPageCount = Math.ceil(searchResults.length / pageSize)
-  const paginatedSearchResults = searchResults.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  )
+  }, [statusFilter, pageSize, debouncedSearch])
 
   // Display data
-  const displayLicenses = isSearchMode ? paginatedSearchResults : licenses
-  const displayTotalCount = isSearchMode ? searchResults.length : totalCount
-  const totalPages = isSearchMode
-    ? searchPageCount
-    : Math.ceil(totalCount / pageSize)
+  const displayLicenses = licenses
+  const displayTotalCount = totalCount
+  const totalPages = Math.ceil(totalCount / pageSize)
 
-  const isLoading = loading || (isSearchMode && searchLoading)
+  const isLoading = loading
 
   // Refresh handler — used after CRUD operations
   const handleRefresh = useCallback(async () => {
-    if (isSearchMode) {
-      await loadAllLicenses()
-    }
-    await loadLicenses()
-  }, [isSearchMode, loadAllLicenses, loadLicenses])
+    await loadData()
+  }, [loadData])
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -317,11 +285,10 @@ export function LicenseManagement() {
     return pages
   }
 
-  // Stats from currently loaded data (all licenses if searching, paginated if not)
-  const statsSource = isSearchMode ? allLicenses : licenses
-  const activeCount = statsSource.filter(l => l.attributes.status === 'active').length
-  const expiredCount = statsSource.filter(l => l.attributes.status === 'expired').length
-  const totalUsage = statsSource.reduce((acc, l) => acc + (l.attributes.uses || 0), 0)
+  // Stats from currently loaded page
+  const activeCount = licenses.filter(l => l.attributes.status === 'active').length
+  const expiredCount = licenses.filter(l => l.attributes.status === 'expired').length
+  const totalUsage = licenses.reduce((acc, l) => acc + (l.attributes.uses || 0), 0)
 
   return (
     <div className="space-y-6 px-4 lg:px-6">
@@ -344,12 +311,9 @@ export function LicenseManagement() {
             <Key className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{isSearchMode ? allLicenses.length : totalCount}</div>
+            <div className="text-2xl font-bold">{totalCount}</div>
             <p className="text-xs text-muted-foreground">
-              {isSearchMode && searchResults.length !== allLicenses.length
-                ? `${searchResults.length} matching search`
-                : 'All licenses'
-              }
+              {isSearchMode ? `${totalCount} matching search` : 'All licenses'}
             </p>
           </CardContent>
         </Card>
@@ -413,7 +377,7 @@ export function LicenseManagement() {
               <span className="text-xs">⌘</span>K
             </kbd>
           )}
-          {isSearchMode && searchLoading && (
+          {isSearchMode && loading && (
             <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
           )}
         </div>
@@ -440,14 +404,14 @@ export function LicenseManagement() {
               <CardTitle>License List</CardTitle>
               <CardDescription>
                 {isSearchMode
-                  ? `${searchResults.length} result${searchResults.length !== 1 ? 's' : ''} for "${debouncedSearch}"`
+                  ? `${totalCount} result${totalCount !== 1 ? 's' : ''} for "${debouncedSearch}"`
                   : `${totalCount} license${totalCount !== 1 ? 's' : ''} total`
                 }
               </CardDescription>
             </div>
             {isSearchMode && (
               <Badge variant="secondary" className="text-xs">
-                Searching all licenses
+                Search results
               </Badge>
             )}
           </div>
