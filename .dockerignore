@@ -1,0 +1,8 @@
+node_modules
+.next
+.git
+.env
+.env.local
+.env.*.local
+deploy.sh
+docs/superpowers

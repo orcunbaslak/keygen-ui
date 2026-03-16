@@ -69,3 +69,6 @@ next-env.d.ts
 *.log
 tmp/
 temp/
+
+# Deploy script (contains private registry URLs)
+deploy.sh

@@ -155,17 +155,27 @@ export function ExampleComponent() {
 
 ## Environment Configuration
 
-The application is configured to work with Keygen instance at `https://lms.pvx.ai/v1`:
+The application requires only Keygen API connection settings:
 
 ```env
-KEYGEN_API_URL=https://lms.pvx.ai/v1
-KEYGEN_ACCOUNT_ID=aca05a24-461a-4db5-8ed1-c12b6040d1c6
-KEYGEN_ADMIN_EMAIL=orcun@pvx.ai
-KEYGEN_ADMIN_PASSWORD=[configured]
-
-# Optional: for Keygen CE singleplayer mode (omits accounts/{id} from API paths)
-# NEXT_PUBLIC_KEYGEN_SINGLEPLAYER=true
+NEXT_PUBLIC_KEYGEN_API_URL=https://your-keygen-host.com/v1
+NEXT_PUBLIC_KEYGEN_SINGLEPLAYER=true  # For Keygen CE singleplayer mode
 ```
+
+Authentication is handled client-side — the user enters their Keygen credentials on the login page, which are exchanged for an API token via the proxy route. No server-side auth secrets are needed.
+
+## Docker Deployment
+
+```bash
+# Build and deploy (from source repo)
+./deploy.sh  # Auto-bumps version, builds, pushes to registry, restarts container
+
+# Manual build
+docker build -t keygen-ui .
+docker run -p 9010:3000 -e NEXT_PUBLIC_KEYGEN_API_URL=https://your-host/v1 keygen-ui
+```
+
+Production runs from `/opt/docker/keygen-ui/` (deploy-only dir with docker-compose.yml, .env, no source code).
 
 ## Implemented Features
 
