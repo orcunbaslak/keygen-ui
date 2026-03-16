@@ -45,6 +45,7 @@ const ALLOWED_PATH_SEGMENTS = new Set([
   'metrics',
   'actions',
   'second-factors',
+  'search',
 ])
 
 function validatePath(path: string[]): boolean {
