@@ -1,5 +1,5 @@
 import { KeygenClient } from '../client';
-import { License, LicenseFilters, KeygenResponse } from '@/lib/types/keygen';
+import { License, LicenseFilters, KeygenResponse, KeygenListResponse } from '@/lib/types/keygen';
 
 export class LicenseResource {
   constructor(private client: KeygenClient) {}
@@ -7,7 +7,7 @@ export class LicenseResource {
   /**
    * List all licenses
    */
-  async list(filters: LicenseFilters = {}): Promise<KeygenResponse<License[]>> {
+  async list(filters: LicenseFilters = {}): Promise<KeygenListResponse<License>> {
     const params = {
       ...this.client.buildPaginationParams(filters),
     };

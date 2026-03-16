@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { getKeygenApi } from '@/lib/api'
 import { License } from '@/lib/types/keygen'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { 
+import { Skeleton } from '@/components/ui/skeleton'
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -15,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { 
+import {
   Table,
   TableBody,
   TableCell,
@@ -23,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -44,12 +45,31 @@ import {
   Edit,
   Copy,
   Download,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  X,
+  Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { handleLoadError, handleCrudError } from '@/lib/utils/error-handling'
 import { CreateLicenseDialog } from './create-license-dialog'
 import { DeleteLicenseDialog } from './delete-license-dialog'
 import { EditLicenseDialog } from './edit-license-dialog'
+
+const PAGE_SIZES = [10, 25, 50, 100] as const
+const DEFAULT_PAGE_SIZE = 25
+const SEARCH_DEBOUNCE_MS = 300
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay)
+    return () => clearTimeout(timer)
+  }, [value, delay])
+  return debouncedValue
+}
 
 export function LicenseManagement() {
   const [licenses, setLicenses] = useState<License[]>([])
@@ -59,36 +79,138 @@ export function LicenseManagement() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedLicense, setSelectedLicense] = useState<License | null>(null)
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE)
+  const [totalCount, setTotalCount] = useState(0)
+
+  // Search state
+  const [allLicenses, setAllLicenses] = useState<License[]>([])
+  const [isSearchMode, setIsSearchMode] = useState(false)
+  const [searchLoading, setSearchLoading] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const debouncedSearch = useDebounce(searchTerm, SEARCH_DEBOUNCE_MS)
+
   const api = getKeygenApi()
 
+  // Keyboard shortcut: Cmd/Ctrl+K to focus search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+      }
+      // Escape to clear search
+      if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
+        setSearchTerm('')
+        searchInputRef.current?.blur()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // Load paginated licenses (normal browsing mode)
   const loadLicenses = useCallback(async () => {
     try {
       setLoading(true)
       const response = await api.licenses.list({
-        limit: 50,
+        page: { size: pageSize, number: currentPage },
         ...(statusFilter !== 'all' && { status: statusFilter as License['attributes']['status'] })
       })
       setLicenses(response.data || [])
+      setTotalCount(response.meta?.count ?? (response.data?.length || 0))
     } catch (error: unknown) {
       handleLoadError(error, 'licenses')
     } finally {
       setLoading(false)
     }
+  }, [api.licenses, pageSize, currentPage, statusFilter])
+
+  // Load ALL licenses for search mode
+  const loadAllLicenses = useCallback(async () => {
+    try {
+      setSearchLoading(true)
+      const response = await api.licenses.list({
+        limit: 250,
+        ...(statusFilter !== 'all' && { status: statusFilter as License['attributes']['status'] })
+      })
+      setAllLicenses(response.data || [])
+    } catch (error: unknown) {
+      handleLoadError(error, 'licenses')
+    } finally {
+      setSearchLoading(false)
+    }
   }, [api.licenses, statusFilter])
 
+  // Switch between search and paginated mode
   useEffect(() => {
-    loadLicenses()
-  }, [loadLicenses])
+    if (debouncedSearch.length > 0) {
+      if (!isSearchMode) {
+        setIsSearchMode(true)
+        loadAllLicenses()
+      }
+    } else {
+      if (isSearchMode) {
+        setIsSearchMode(false)
+        setAllLicenses([])
+      }
+    }
+  }, [debouncedSearch, isSearchMode, loadAllLicenses])
 
-  const filteredLicenses = licenses.filter(license => {
-    const matchesSearch = !searchTerm || 
-      license.attributes.key?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      license.attributes.name?.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesStatus = statusFilter === 'all' || license.attributes.status.toLowerCase() === statusFilter
-    
-    return matchesSearch && matchesStatus
+  // Load paginated data when not searching
+  useEffect(() => {
+    if (!isSearchMode) {
+      loadLicenses()
+    }
+  }, [loadLicenses, isSearchMode])
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [statusFilter, pageSize])
+
+  // Reload search results when status filter changes during search
+  useEffect(() => {
+    if (isSearchMode) {
+      loadAllLicenses()
+    }
+  }, [statusFilter]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Filtered results for search mode
+  const searchResults = allLicenses.filter(license => {
+    const term = debouncedSearch.toLowerCase()
+    return (
+      license.attributes.key?.toLowerCase().includes(term) ||
+      license.attributes.name?.toLowerCase().includes(term) ||
+      license.id.toLowerCase().includes(term)
+    )
   })
+
+  // Paginate search results client-side
+  const searchPageCount = Math.ceil(searchResults.length / pageSize)
+  const paginatedSearchResults = searchResults.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  )
+
+  // Display data
+  const displayLicenses = isSearchMode ? paginatedSearchResults : licenses
+  const displayTotalCount = isSearchMode ? searchResults.length : totalCount
+  const totalPages = isSearchMode
+    ? searchPageCount
+    : Math.ceil(totalCount / pageSize)
+
+  const isLoading = loading || (isSearchMode && searchLoading)
+
+  // Refresh handler — used after CRUD operations
+  const handleRefresh = useCallback(async () => {
+    if (isSearchMode) {
+      await loadAllLicenses()
+    }
+    await loadLicenses()
+  }, [isSearchMode, loadAllLicenses, loadLicenses])
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -111,7 +233,7 @@ export function LicenseManagement() {
   const handleSuspendLicense = async (license: License) => {
     try {
       await api.licenses.suspend(license.id)
-      await loadLicenses()
+      await handleRefresh()
       toast.success('License suspended successfully')
     } catch (error: unknown) {
       handleCrudError(error, 'update', 'License', { customMessage: 'Failed to suspend license' })
@@ -121,7 +243,7 @@ export function LicenseManagement() {
   const handleReinstateLicense = async (license: License) => {
     try {
       await api.licenses.reinstate(license.id)
-      await loadLicenses()
+      await handleRefresh()
       toast.success('License reinstated successfully')
     } catch (error: unknown) {
       handleCrudError(error, 'update', 'License', { customMessage: 'Failed to reinstate license' })
@@ -131,7 +253,7 @@ export function LicenseManagement() {
   const handleRenewLicense = async (license: License) => {
     try {
       await api.licenses.renew(license.id)
-      await loadLicenses()
+      await handleRefresh()
       toast.success('License renewed successfully')
     } catch (error: unknown) {
       handleCrudError(error, 'update', 'License', { customMessage: 'Failed to renew license' })
@@ -168,6 +290,39 @@ export function LicenseManagement() {
     }
   }
 
+  const clearSearch = () => {
+    setSearchTerm('')
+    setCurrentPage(1)
+    searchInputRef.current?.focus()
+  }
+
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)))
+  }
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pages: (number | 'ellipsis')[] = []
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i)
+    } else {
+      pages.push(1)
+      if (currentPage > 3) pages.push('ellipsis')
+      const start = Math.max(2, currentPage - 1)
+      const end = Math.min(totalPages - 1, currentPage + 1)
+      for (let i = start; i <= end; i++) pages.push(i)
+      if (currentPage < totalPages - 2) pages.push('ellipsis')
+      pages.push(totalPages)
+    }
+    return pages
+  }
+
+  // Stats from currently loaded data (all licenses if searching, paginated if not)
+  const statsSource = isSearchMode ? allLicenses : licenses
+  const activeCount = statsSource.filter(l => l.attributes.status === 'active').length
+  const expiredCount = statsSource.filter(l => l.attributes.status === 'expired').length
+  const totalUsage = statsSource.reduce((acc, l) => acc + (l.attributes.uses || 0), 0)
+
   return (
     <div className="space-y-6 px-4 lg:px-6">
       {/* Header */}
@@ -178,7 +333,7 @@ export function LicenseManagement() {
             Manage and monitor your software licenses
           </p>
         </div>
-        <CreateLicenseDialog onLicenseCreated={loadLicenses} />
+        <CreateLicenseDialog onLicenseCreated={handleRefresh} />
       </div>
 
       {/* Stats Cards */}
@@ -189,9 +344,12 @@ export function LicenseManagement() {
             <Key className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{licenses.length}</div>
+            <div className="text-2xl font-bold">{isSearchMode ? allLicenses.length : totalCount}</div>
             <p className="text-xs text-muted-foreground">
-              +12% from last month
+              {isSearchMode && searchResults.length !== allLicenses.length
+                ? `${searchResults.length} matching search`
+                : 'All licenses'
+              }
             </p>
           </CardContent>
         </Card>
@@ -201,12 +359,8 @@ export function LicenseManagement() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {licenses.filter(l => l.attributes.status === 'active').length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Currently active licenses
-            </p>
+            <div className="text-2xl font-bold">{activeCount}</div>
+            <p className="text-xs text-muted-foreground">Currently active licenses</p>
           </CardContent>
         </Card>
         <Card>
@@ -215,12 +369,8 @@ export function LicenseManagement() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {licenses.filter(l => l.attributes.status === 'expired').length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Need renewal
-            </p>
+            <div className="text-2xl font-bold">{expiredCount}</div>
+            <p className="text-xs text-muted-foreground">Need renewal</p>
           </CardContent>
         </Card>
         <Card>
@@ -229,28 +379,43 @@ export function LicenseManagement() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {licenses.reduce((acc, l) => acc + (l.attributes.uses || 0), 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Total activations
-            </p>
+            <div className="text-2xl font-bold">{totalUsage}</div>
+            <p className="text-xs text-muted-foreground">Total activations</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters and Search */}
-      <div className="flex items-center space-x-4">
-        <div className="flex-1 max-w-sm">
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search licenses..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
-            />
-          </div>
+      {/* Search and Filters */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            ref={searchInputRef}
+            placeholder="Search by key, name, or ID..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value)
+              setCurrentPage(1)
+            }}
+            className="pl-9 pr-20"
+          />
+          {searchTerm ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearSearch}
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          ) : (
+            <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:flex">
+              <span className="text-xs">⌘</span>K
+            </kbd>
+          )}
+          {isSearchMode && searchLoading && (
+            <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+          )}
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[150px]">
@@ -269,49 +434,78 @@ export function LicenseManagement() {
 
       {/* Licenses Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>License List</CardTitle>
-          <CardDescription>
-            A list of all licenses in your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="text-sm text-muted-foreground">Loading licenses...</div>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>License List</CardTitle>
+              <CardDescription>
+                {isSearchMode
+                  ? `${searchResults.length} result${searchResults.length !== 1 ? 's' : ''} for "${debouncedSearch}"`
+                  : `${totalCount} license${totalCount !== 1 ? 's' : ''} total`
+                }
+              </CardDescription>
             </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>License Key</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Usage</TableHead>
-                  <TableHead>Expiry</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="w-[70px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredLicenses.map((license) => (
-                  <TableRow key={license.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <code className="text-sm bg-muted px-1 rounded">
+            {isSearchMode && (
+              <Badge variant="secondary" className="text-xs">
+                Searching all licenses
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="px-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="pl-6">License Key</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Usage</TableHead>
+                <TableHead>Expiry</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead className="w-[70px] pr-6">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                // Skeleton loading rows
+                Array.from({ length: pageSize > 10 ? 10 : pageSize }).map((_, i) => (
+                  <TableRow key={`skeleton-${i}`}>
+                    <TableCell className="pl-6">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-5 w-40" />
+                        <Skeleton className="h-6 w-6 rounded" />
+                      </div>
+                    </TableCell>
+                    <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                    <TableCell className="pr-6"><Skeleton className="h-6 w-6 rounded" /></TableCell>
+                  </TableRow>
+                ))
+              ) : displayLicenses.length > 0 ? (
+                displayLicenses.map((license) => (
+                  <TableRow key={license.id} className="group">
+                    <TableCell className="pl-6">
+                      <div className="flex items-center gap-2">
+                        <code className="text-sm bg-muted px-1.5 py-0.5 rounded font-mono">
                           {license.attributes.key.substring(0, 20)}...
                         </code>
                         <Button
                           variant="ghost"
                           size="sm"
+                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={() => copyLicenseKey(license.attributes.key)}
                         >
                           <Copy className="h-3 w-3" />
                         </Button>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      {license.attributes.name || 'Unnamed License'}
+                    <TableCell className="font-medium">
+                      {license.attributes.name || (
+                        <span className="text-muted-foreground italic">Unnamed</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -322,22 +516,26 @@ export function LicenseManagement() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {license.attributes.uses || 0}
-                      {license.attributes.maxUses ? ` / ${license.attributes.maxUses}` : ''}
+                      <span className="tabular-nums">
+                        {license.attributes.uses || 0}
+                        {license.attributes.maxUses ? (
+                          <span className="text-muted-foreground"> / {license.attributes.maxUses}</span>
+                        ) : ''}
+                      </span>
                     </TableCell>
                     <TableCell>
-                      {license.attributes.expiry 
+                      {license.attributes.expiry
                         ? formatDate(license.attributes.expiry)
-                        : 'Never expires'
+                        : <span className="text-muted-foreground">Never</span>
                       }
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-muted-foreground">
                       {formatDate(license.attributes.created)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="pr-6">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -353,14 +551,14 @@ export function LicenseManagement() {
                             Generate Token
                           </DropdownMenuItem>
                           {license.attributes.status === 'active' ? (
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               onClick={() => handleSuspendLicense(license)}
                             >
                               <Pause className="mr-2 h-4 w-4" />
                               Suspend
                             </DropdownMenuItem>
                           ) : (
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               onClick={() => handleReinstateLicense(license)}
                             >
                               <Play className="mr-2 h-4 w-4" />
@@ -368,7 +566,7 @@ export function LicenseManagement() {
                             </DropdownMenuItem>
                           )}
                           {license.attributes.status === 'expired' && (
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               onClick={() => handleRenewLicense(license)}
                             >
                               <Calendar className="mr-2 h-4 w-4" />
@@ -376,7 +574,7 @@ export function LicenseManagement() {
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => handleDeleteLicense(license)}
                             className="text-destructive"
                           >
@@ -387,23 +585,125 @@ export function LicenseManagement() {
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-          
-          {!loading && filteredLicenses.length === 0 && (
-            <div className="flex items-center justify-center h-32">
-              <div className="text-center">
-                <Key className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                <div className="text-sm font-medium">No licenses found</div>
-                <div className="text-xs text-muted-foreground">
-                  {searchTerm || statusFilter !== 'all' 
-                    ? 'Try adjusting your search or filters'
-                    : 'Get started by creating your first license'
-                  }
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7}>
+                    <div className="flex items-center justify-center h-32">
+                      <div className="text-center">
+                        <Key className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+                        <div className="text-sm font-medium">No licenses found</div>
+                        <div className="text-xs text-muted-foreground">
+                          {searchTerm || statusFilter !== 'all'
+                            ? 'Try adjusting your search or filters'
+                            : 'Get started by creating your first license'
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+
+          {/* Pagination */}
+          {!isLoading && displayTotalCount > 0 && (
+            <div className="flex items-center justify-between border-t px-6 pt-4 mt-2">
+              {/* Left: showing range + page size */}
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>
+                  Showing{' '}
+                  <span className="font-medium text-foreground">
+                    {Math.min((currentPage - 1) * pageSize + 1, displayTotalCount)}
+                  </span>
+                  {' '}&ndash;{' '}
+                  <span className="font-medium text-foreground">
+                    {Math.min(currentPage * pageSize, displayTotalCount)}
+                  </span>
+                  {' '}of{' '}
+                  <span className="font-medium text-foreground">{displayTotalCount}</span>
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs">Rows</span>
+                  <Select
+                    value={String(pageSize)}
+                    onValueChange={(v) => setPageSize(Number(v))}
+                  >
+                    <SelectTrigger className="h-7 w-[62px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAGE_SIZES.map(size => (
+                        <SelectItem key={size} value={String(size)}>
+                          {size}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+
+              {/* Right: page navigation */}
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    disabled={currentPage === 1}
+                    onClick={() => goToPage(1)}
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    disabled={currentPage === 1}
+                    onClick={() => goToPage(currentPage - 1)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+
+                  {getPageNumbers().map((page, idx) =>
+                    page === 'ellipsis' ? (
+                      <span key={`ellipsis-${idx}`} className="px-1 text-muted-foreground text-sm">
+                        ...
+                      </span>
+                    ) : (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-8 w-8 p-0 text-xs"
+                        onClick={() => goToPage(page)}
+                      >
+                        {page}
+                      </Button>
+                    )
+                  )}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    disabled={currentPage === totalPages}
+                    onClick={() => goToPage(currentPage + 1)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    disabled={currentPage === totalPages}
+                    onClick={() => goToPage(totalPages)}
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
@@ -415,7 +715,7 @@ export function LicenseManagement() {
           license={selectedLicense}
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
-          onLicenseDeleted={loadLicenses}
+          onLicenseDeleted={handleRefresh}
         />
       )}
 
@@ -425,7 +725,7 @@ export function LicenseManagement() {
           license={selectedLicense}
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
-          onLicenseUpdated={loadLicenses}
+          onLicenseUpdated={handleRefresh}
         />
       )}
     </div>
