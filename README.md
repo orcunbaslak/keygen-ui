@@ -164,14 +164,19 @@ Keygen UI is a comprehensive, enterprise-grade frontend application that provide
    ```bash
    cp .env.example .env.local
    ```
-   
+
    Update `.env.local` with your Keygen instance details:
    ```env
-   KEYGEN_API_URL=https://api.keygen.sh/v1
-   KEYGEN_ACCOUNT_ID=your-account-id
-   KEYGEN_ADMIN_EMAIL=your-email@example.com
-   KEYGEN_ADMIN_PASSWORD=your-secure-password
+   # Your Keygen API URL (standard or custom domain)
+   NEXT_PUBLIC_KEYGEN_API_URL=https://api.keygen.sh/v1
+
+   # For Keygen CE singleplayer mode (omits accounts/{id} from API paths)
+   # NEXT_PUBLIC_KEYGEN_SINGLEPLAYER=true
    ```
+
+   If you use a [custom domain](https://keygen.sh/docs/custom-domains/), set the URL to your custom domain (e.g. `https://licensing.example.com/v1`).
+
+   Authentication is handled in the browser — enter your Keygen admin credentials on the login page. No server-side secrets are needed.
 
 4. **Start the development server**
    ```bash
@@ -179,12 +184,27 @@ Keygen UI is a comprehensive, enterprise-grade frontend application that provide
    ```
 
 5. **Open your browser**
-   
+
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ### 🎉 That's it!
 
 You should now have a fully functional Keygen UI running locally.
+
+### 🐳 Docker
+
+You can also run Keygen UI with Docker:
+
+```bash
+docker build \
+  --build-arg NEXT_PUBLIC_KEYGEN_API_URL=https://api.keygen.sh/v1 \
+  --build-arg NEXT_PUBLIC_KEYGEN_SINGLEPLAYER=false \
+  -t keygen-ui .
+
+docker run -p 3000:3000 keygen-ui
+```
+
+The `NEXT_PUBLIC_*` build args are baked into the image at build time (required by Next.js for prerendering).
 
 ---
 
@@ -204,12 +224,6 @@ You should now have a fully functional Keygen UI running locally.
 | **Notifications** | Sonner | Latest | Toast notifications |
 
 </div>
-
----
-
-## 📚 Docs
-
-- Start here: [AGENTS.md](./AGENTS.md) — index for all project docs and guidance for agents.
 
 ---
 
@@ -285,9 +299,9 @@ export function ExampleComponent() {
 - `/dashboard/machines` - Machine monitoring
 - `/dashboard/products` - Product management
 - `/dashboard/policies` - Policy management
-- `/dashboard/groups` - **NEW** Group management and organization
-- `/dashboard/entitlements` - **NEW** Feature entitlement management
-- `/dashboard/webhooks` - **NEW** Real-time webhook configuration
+- `/dashboard/groups` - Group management and organization
+- `/dashboard/entitlements` - Feature entitlement management
+- `/dashboard/webhooks` - Real-time webhook configuration
 - `/dashboard/users` - User administration
 
 ---
@@ -357,19 +371,13 @@ pnpm add <package>     # Add new dependency
 src/
 ├── app/                 # Next.js App Router
 │   ├── (dashboard)/     # Dashboard routes
-│   │   ├── groups/     # Group management (NEW)
-│   │   ├── entitlements/ # Entitlement management (NEW)
-│   │   ├── webhooks/   # Webhook management (NEW)
-│   │   └── ...         # Other routes
+│   │   ├── groups/     # Group management│   │   ├── entitlements/ # Entitlement management│   │   ├── webhooks/   # Webhook management│   │   └── ...         # Other routes
 │   └── login/           # Authentication
 ├── components/          # React components
 │   ├── ui/             # shadcn/ui components
 │   ├── licenses/       # License management
 │   ├── machines/       # Machine management
-│   ├── groups/         # Group management (NEW)
-│   ├── entitlements/   # Entitlement management (NEW)
-│   ├── webhooks/       # Webhook management (NEW)
-│   └── users/          # User management
+│   ├── groups/         # Group management│   ├── entitlements/   # Entitlement management│   ├── webhooks/       # Webhook management│   └── users/          # User management
 ├── lib/                # Utilities and API
 │   ├── api/            # Keygen API client
 │   │   └── resources/  # All API resource classes
@@ -381,9 +389,7 @@ src/
 
 ## 🏢 Enterprise Features
 
-### New in Version 2.0
-
-Keygen UI now includes advanced enterprise-grade features that transform it from a basic license management tool into a comprehensive licensing platform:
+Keygen UI includes advanced enterprise-grade features that transform it from a basic license management tool into a comprehensive licensing platform:
 
 #### 🏗️ **Organizational Management**
 - **Groups**: Organize users and licenses into hierarchical groups
